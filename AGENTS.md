@@ -5,7 +5,7 @@ Sistem Informasi Keuangan universitas PTS: tagihan, pembayaran, ledger double-en
 ## Kondisi repository
 
 - Scaffold Django + uv tersedia dengan modul core, platform_app, billing, payment, ledger, budget, dan academic.
-- Branch feat/ledger-core mengimplementasikan bagan akun, periode akuntansi, posting jurnal double-entry, idempotensi sumber, API ledger, dan proteksi PostgreSQL append-only.
+- Branch feat/ledger-core mengimplementasikan bagan akun, periode akuntansi, posting jurnal double-entry, idempotensi sumber, trial balance as-of, API ledger, dan proteksi PostgreSQL untuk histori akun/periode serta jurnal append-only.
 - Billing, payment, budget, pajak, payroll, laporan, audit bisnis, dan sinkronisasi read model akademik masih memerlukan implementasi.
 - PostgreSQL lokal diperlukan untuk migrasi dan pengujian integrasi database.
 

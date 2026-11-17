@@ -9,19 +9,23 @@ Stack: Python 3.14.5, Django 6, Django REST Framework, HTMX, Tailwind, PostgreSQ
 ### Fondasi ledger tersedia pada branch feat/ledger-core
 
 - Bagan akun per entitas: tipe akun, saldo normal, akun induk, dan status aktif.
-- Periode akuntansi dengan rentang tanggal, pemeriksaan tumpang tindih pada validasi model, serta penutupan maker-checker.
+- Periode akuntansi dengan pemeriksaan tumpang tindih di model dan database, serta penutupan maker-checker.
 - Posting jurnal double-entry dalam satu transaksi database.
 - Idempotensi berdasarkan entity_id + source_type + source_id. Retry dengan payload yang sama mengembalikan jurnal lama; payload berbeda ditolak.
 - Validasi akun aktif dan kepemilikan entitas; tanggal bisnis harus berada di periode terbuka.
-- Proteksi PostgreSQL untuk jurnal append-only, scope akun/periode, minimal dua baris, dan keseimbangan debit-kredit.
+- Proteksi PostgreSQL untuk jurnal append-only; akun yang sudah dipakai tidak bisa mengubah klasifikasi; periode tidak dapat digeser setelah memiliki jurnal, ditutup permanen, dan tidak boleh tumpang tindih.
 - API jurnal dengan autentikasi admin/staff dan keyset cursor pagination.
+- Trial balance per tanggal untuk semua akun, termasuk akun tanpa mutasi; memuat total mutasi dan saldo akhir debit/kredit.
 
 Endpoint:
 - GET /api/ledger/journals?entity_id=10&limit=50
 - GET /api/ledger/journals?entity_id=10&limit=50&cursor=<next_cursor>
 - POST /api/ledger/journals
+- GET /api/ledger/reports/trial-balance?entity_id=10&as_of=2026-11-17
 
 Payload POST membutuhkan entity_id, business_date, source_type, source_id, description, dan minimal dua baris lines. Setiap baris memiliki account_id UUID, debit integer Rupiah, credit integer Rupiah, dan description opsional.
+
+Trial balance menghitung seluruh jurnal posted sampai tanggal as_of. Saldo awal wajib direpresentasikan sebagai jurnal pembukaan; laporan tidak mengarang saldo dari data di luar ledger.
 
 API saat ini dibatasi untuk pengguna Django is_staff. RBAC berbasis entitas/fakultas/prodi perlu diselesaikan sebelum akses diberikan kepada operator unit.
 
@@ -74,7 +78,7 @@ Default konfigurasi membaca .env/.env, lalu overlay .env/.env.local. Untuk stagi
 - simkeu/: konfigurasi Django, URL, Celery, WSGI/ASGI.
 - apps/core: beranda dan health endpoint.
 - apps/platform_app: outbox dan audit platform.
-- apps/ledger: bagan akun, periode, jurnal double-entry, API ledger.
+- apps/ledger: bagan akun, periode, jurnal double-entry, trial balance, API ledger.
 - apps/billing, apps/payment, apps/budget: modul lanjutan.
 - apps/academic: anti-corruption layer SIAKAD Sister dan SIMPEG.
 - templates/: template server-rendered.
