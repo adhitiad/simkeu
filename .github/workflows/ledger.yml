@@ -1,0 +1,62 @@
+name: Ledger CI
+
+on:
+  push:
+    branches:
+      - main
+      - feat/ledger-core
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ledger-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: simkeu
+          POSTGRES_USER: simkeu
+          POSTGRES_PASSWORD: simkeu
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U simkeu -d simkeu"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      SECRET_KEY: test-only-not-for-production
+      DEBUG: "True"
+      ALLOWED_HOSTS: localhost,127.0.0.1
+      DATABASE_URL: postgresql://simkeu:simkeu@localhost:5432/simkeu
+      CELERY_TASK_ALWAYS_EAGER: "True"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14.5"
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+      - name: Install dependencies
+        run: uv sync --locked
+      - name: Django system checks
+        run: uv run python manage.py check
+      - name: Check migration state
+        run: uv run python manage.py makemigrations --check --dry-run
+      - name: Ruff
+        run: uv run ruff check apps/ledger tests/test_ledger.py simkeu/urls.py
+      - name: Ruff format
+        run: uv run ruff format --check apps/ledger tests/test_ledger.py simkeu/urls.py
+      - name: Tests
+        run: uv run pytest -q
