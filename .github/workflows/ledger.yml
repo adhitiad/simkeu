@@ -55,8 +55,8 @@ jobs:
       - name: Check migration state
         run: uv run python manage.py makemigrations --check --dry-run
       - name: Ruff
-        run: uv run ruff check apps/ledger tests/test_ledger.py simkeu/urls.py
+        run: uv run ruff check apps/ledger apps/platform_app tests/test_ledger.py tests/test_rbac.py tests/test_p0_organization.py simkeu/urls.py
       - name: Ruff format
-        run: uv run ruff format --check --diff apps/ledger tests/test_ledger.py simkeu/urls.py
+        run: uv run ruff format --check --diff apps/ledger apps/platform_app tests/test_ledger.py tests/test_rbac.py tests/test_p0_organization.py simkeu/urls.py
       - name: Tests
         run: uv run pytest -q

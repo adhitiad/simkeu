@@ -8,8 +8,23 @@
   <input type="hidden" name="entity" value="{{ entity.pk }}">
   <p><label>Kode <input name="code" maxlength="32" required></label></p>
   <p><label>Nama <input name="name" maxlength="160" required></label></p>
+  <p><label>Institusi
+    <select name="institution">
+      <option value="">— Tingkat badan hukum / otomatis dari induk —</option>
+      {% for item in institutions %}
+      <option value="{{ item.pk }}"{% if selected_institution.pk == item.pk %} selected{% endif %}>{{ item.code }} — {{ item.name }}</option>
+      {% endfor %}
+    </select>
+  </label></p>
   <p><label>Jenis <select name="unit_type">{% for value, label in unit_types %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label></p>
-  <p><label>Induk <select name="parent"><option value="">—</option>{% for parent in parents %}<option value="{{ parent.pk }}">{{ parent.name }}</option>{% endfor %}</select></label></p>
+  <p><label>Induk
+    <select name="parent">
+      <option value="">—</option>
+      {% for parent in parents %}
+      <option value="{{ parent.pk }}">{{ parent.institution.code|default:"Badan hukum" }} / {{ parent.name }}</option>
+      {% endfor %}
+    </select>
+  </label></p>
   <button type="submit">Simpan</button>
 </form>
 {% endblock %}

@@ -3,19 +3,26 @@
 {% block content %}
 <h1>Unit Organisasi</h1>
 {% if entity %}
-<p>Entitas: {{ entity.name }}</p>
+<p>Badan hukum: {{ entity.name }}</p>
 <p><a href="{% url 'unit_create' %}?entity={{ entity.pk }}">Tambah unit</a></p>
 <table class="card">
-  <thead><tr><th>Kode</th><th>Nama</th><th>Jenis</th><th>Induk</th></tr></thead>
+  <thead><tr><th>Kode</th><th>Nama</th><th>Institusi</th><th>Jenis</th><th>Induk</th><th>Cost center</th></tr></thead>
   <tbody>
     {% for unit in units %}
-    <tr><td>{{ unit.code }}</td><td>{{ unit.name }}</td><td>{{ unit.get_unit_type_display }}</td><td>{{ unit.parent|default:"—" }}</td></tr>
+    <tr>
+      <td>{{ unit.code }}</td>
+      <td>{{ unit.name }}</td>
+      <td>{{ unit.institution|default:"—" }}</td>
+      <td>{{ unit.get_unit_type_display }}</td>
+      <td>{{ unit.parent|default:"—" }}</td>
+      <td>{% if unit.is_cost_center %}Ya{% else %}Tidak{% endif %}</td>
+    </tr>
     {% empty %}
-    <tr><td colspan="4">Belum ada unit.</td></tr>
+    <tr><td colspan="6">Belum ada unit.</td></tr>
     {% endfor %}
   </tbody>
 </table>
 {% else %}
-<p>Belum ada entitas yang dapat diakses.</p>
+<p>Belum ada badan hukum yang dapat diakses.</p>
 {% endif %}
 {% endblock %}

@@ -12,6 +12,7 @@ from apps.ledger.models import JournalEntry
 from apps.platform_app.models import (
     AuditEvent,
     Entity,
+    Institution,
     OrganizationalUnit,
     OutboxEvent,
     Role,
@@ -22,9 +23,11 @@ from apps.platform_app.services import (
     IamError,
     assign_role,
     entities_for_user,
+    has_permission,
     has_permission_any_entity,
     record_audit,
     require_permission,
+    revoke_role,
     role_codes,
     visible_unit_ids,
 )
@@ -141,12 +144,10 @@ def unit_list(request: HttpRequest) -> HttpResponse:
         entity = entities[0] if entities else None
     if entity is None:
         return render(request, "platform/unit_list.html", {"entity": None, "units": []})
-    try:
-        require_permission(request.user, "iam.unit.read", entity_id=entity.pk)
-    except IamError:
-        return _forbidden(request)
-    units = OrganizationalUnit.objects.filter(entity=entity).select_related("parent")
     visible = visible_unit_ids(request.user, entity.pk, "iam.unit.read")
+    if visible is not None and not visible:
+        return _forbidden(request)
+    units = OrganizationalUnit.objects.filter(entity=entity).select_related("parent", "institution")
     if visible is not None:
         units = units.filter(pk__in=visible)
     return render(
@@ -162,29 +163,67 @@ def unit_create(request: HttpRequest) -> HttpResponse:
     entity = next((item for item in entities if str(item.pk) == raw_entity), None)
     if entity is None:
         return _forbidden(request)
-    try:
-        require_permission(request.user, "iam.unit.create", entity_id=entity.pk, unit_id=None)
-    except IamError:
-        return _forbidden(request)
+
+    raw_institution_id = request.GET.get("institution") or request.POST.get("institution") or ""
+    institution = None
+    if raw_institution_id:
+        try:
+            institution = Institution.objects.get(
+                pk=int(raw_institution_id),
+                entity=entity,
+                is_active=True,
+            )
+        except Institution.DoesNotExist, ValueError:
+            return _forbidden(request)
 
     if request.method == "POST":
         code = request.POST.get("code", "").strip()
         name = request.POST.get("name", "").strip()
         unit_type = request.POST.get("unit_type", "")
         raw_parent_id = request.POST.get("parent") or None
-        parent_pk: int | None = None
-        if raw_parent_id is not None:
+        parent = None
+        if raw_parent_id:
             try:
-                parent_pk = int(raw_parent_id)
-            except ValueError:
-                parent_pk = None
+                parent = OrganizationalUnit.objects.get(
+                    pk=int(raw_parent_id),
+                    entity=entity,
+                    is_active=True,
+                )
+            except OrganizationalUnit.DoesNotExist, ValueError:
+                messages.error(request, "Unit induk tidak valid.")
+                return redirect("unit_create")
+            if institution is None:
+                institution = parent.institution
+            if parent.institution_id != (institution.pk if institution else None):
+                messages.error(request, "Institusi unit induk tidak sesuai.")
+                return redirect("unit_create")
+
         try:
+            if parent is not None:
+                require_permission(
+                    request.user,
+                    "iam.unit.create",
+                    entity_id=entity.pk,
+                    institution_id=institution.pk if institution else None,
+                    unit_id=parent.pk,
+                )
+            elif institution is not None:
+                require_permission(
+                    request.user,
+                    "iam.unit.create",
+                    entity_id=entity.pk,
+                    institution_id=institution.pk,
+                )
+            else:
+                require_permission(
+                    request.user,
+                    "iam.unit.create",
+                    entity_id=entity.pk,
+                )
             with transaction.atomic():
-                parent = None
-                if parent_pk is not None:
-                    parent = OrganizationalUnit.objects.filter(pk=parent_pk, entity=entity).first()
                 unit = OrganizationalUnit(
                     entity=entity,
+                    institution=institution,
                     parent=parent,
                     code=code,
                     name=name,
@@ -192,6 +231,8 @@ def unit_create(request: HttpRequest) -> HttpResponse:
                 )
                 unit.full_clean()
                 unit.save()
+        except IamError:
+            return _forbidden(request)
         except (IntegrityError, ValueError) as exc:
             messages.error(request, f"Unit tidak valid: {exc}")
         else:
@@ -203,19 +244,46 @@ def unit_create(request: HttpRequest) -> HttpResponse:
                 target_id=str(unit.pk),
                 entity_id=entity.pk,
                 unit_id=unit.pk,
-                after_state={"code": code, "name": name, "unit_type": unit_type},
+                after_state={
+                    "code": code,
+                    "name": name,
+                    "unit_type": unit_type,
+                    "institution_id": institution.pk if institution else None,
+                    "parent_id": parent.pk if parent else None,
+                },
                 request_id=request_id,
                 ip_address=ip_address,
             )
             messages.success(request, "Unit organisasi berhasil dibuat.")
             return redirect("unit_list")
+
+    visible = visible_unit_ids(request.user, entity.pk, "iam.unit.read")
+    parents = OrganizationalUnit.objects.filter(entity=entity, is_active=True)
+    if visible is not None:
+        parents = parents.filter(pk__in=visible)
+    institutions = Institution.objects.filter(entity=entity, is_active=True)
+    if not request.user.is_superuser and not has_permission_any_entity(
+        request.user, "iam.unit.create"
+    ):
+        institutions = [
+            item
+            for item in institutions
+            if has_permission(
+                request.user,
+                "iam.unit.create",
+                entity_id=entity.pk,
+                institution_id=item.pk,
+            )
+        ]
     return render(
         request,
         "platform/unit_form.html",
         {
             "entity": entity,
             "unit_types": UnitType.choices,
-            "parents": OrganizationalUnit.objects.filter(entity=entity, is_active=True),
+            "parents": parents,
+            "institutions": institutions,
+            "selected_institution": institution,
         },
     )
 
@@ -234,7 +302,9 @@ def role_assignment_list(request: HttpRequest) -> HttpResponse:
         require_permission(request.user, "iam.role.read", entity_id=entity.pk)
     except IamError:
         return _forbidden(request)
-    assignments = UserRole.objects.filter(entity=entity).select_related("user", "role", "unit")
+    assignments = UserRole.objects.filter(entity=entity).select_related(
+        "user", "role", "institution", "unit"
+    )
     return render(
         request,
         "platform/role_assignment_list.html",
@@ -245,6 +315,7 @@ def role_assignment_list(request: HttpRequest) -> HttpResponse:
             "roles": Role.objects.filter(is_active=True),
             "users": User.objects.filter(is_active=True),
             "units": OrganizationalUnit.objects.filter(entity=entity, is_active=True),
+            "institutions": Institution.objects.filter(entity=entity, is_active=True),
         },
     )
 
@@ -258,18 +329,29 @@ def role_assign(request: HttpRequest) -> HttpResponse:
         entity = Entity.objects.get(pk=int(request.POST.get("entity", "0")))
         user = User.objects.get(pk=int(request.POST.get("user", "0")))
         role = Role.objects.get(pk=int(request.POST.get("role", "0")))
+        institution_id = request.POST.get("institution") or None
+        institution = (
+            Institution.objects.filter(pk=institution_id, entity=entity, is_active=True).first()
+            if institution_id
+            else None
+        )
+        if institution_id and institution is None:
+            raise IamError("Institusi tidak valid untuk badan hukum ini.")
         unit_id = request.POST.get("unit") or None
         unit = (
-            OrganizationalUnit.objects.filter(pk=unit_id, entity=entity).first()
+            OrganizationalUnit.objects.filter(pk=unit_id, entity=entity, is_active=True).first()
             if unit_id
             else None
         )
+        if unit_id and unit is None:
+            raise IamError("Unit tidak valid untuk badan hukum ini.")
         request_id, ip_address = _request_context(request)
         assign_role(
             actor=request.user,
             user=user,
             role=role,
             entity=entity,
+            institution=institution,
             unit=unit,
             request_id=request_id,
             ip_address=ip_address,
@@ -278,4 +360,26 @@ def role_assign(request: HttpRequest) -> HttpResponse:
         messages.error(request, f"Penugasan gagal: {exc}")
     else:
         messages.success(request, "Peran berhasil diberikan.")
+    return redirect("role_assignment_list")
+
+
+def role_revoke(request: HttpRequest, assignment_id: int) -> HttpResponse:
+    if not request.user.is_authenticated:
+        return redirect("login")
+    if request.method != "POST":
+        return _forbidden(request)
+    try:
+        assignment = UserRole.objects.get(pk=assignment_id)
+        request_id, ip_address = _request_context(request)
+        revoke_role(
+            actor=request.user,
+            assignment=assignment,
+            reason=request.POST.get("reason", "").strip()[:1000],
+            request_id=request_id,
+            ip_address=ip_address,
+        )
+    except (UserRole.DoesNotExist, IamError) as exc:
+        messages.error(request, f"Pencabutan peran gagal: {exc}")
+    else:
+        messages.success(request, "Penugasan peran berhasil dicabut.")
     return redirect("role_assignment_list")

@@ -124,3 +124,10 @@ AI boleh membuat ringkasan RKAT, narasi variance, analisis tren, draft surat, da
 - Limit nominal dan pejabat pengesah RKAT, revisi, pengeluaran, refund, laporan tahunan.
 - Bank/payment provider, rekening koran, dokumen pajak.
 - Retensi dokumen dan klasifikasi data yang boleh diproses OpenRouter.
+
+
+## 9. Implementasi P0 Organization & RBAC
+
+Implementasi awal mempertahankan model platform_app.Entity sebagai badan hukum penyelenggara karena ID BIGINT-nya sudah digunakan oleh ledger. Model Institution membedakan universitas/PTS dari badan hukum. OrganizationalUnit menjadi hierarki fakultas, prodi, biro, bagian, kampus, unit pendukung, serta cost center.
+
+Position dan PositionAssignment menyimpan jabatan dan SK pengangkatan. Keduanya terpisah dari Role dan UserRole: jabatan tidak otomatis memberi hak akses. UserRole memiliki scope entity/institution/unit, tanggal berlaku, dan informasi pencabutan. Rincian implementasi dan batas P0 ada di docs/architecture/organization-rbac.md.

@@ -11,6 +11,7 @@ from apps.platform_app.views import (
     login_view,
     role_assign,
     role_assignment_list,
+    role_revoke,
     unit_create,
     unit_list,
 )
@@ -27,6 +28,7 @@ urlpatterns = [
     path("units/new/", unit_create, name="unit_create"),
     path("roles/", role_assignment_list, name="role_assignment_list"),
     path("roles/assign/", role_assign, name="role_assign"),
+    path("roles/<int:assignment_id>/revoke/", role_revoke, name="role_revoke"),
     path("healthz", healthz, name="healthz"),
     path("readyz", readyz, name="readyz"),
     path("", include("django_prometheus.urls")),
