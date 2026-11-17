@@ -153,11 +153,14 @@ def has_permission(
     if user.is_superuser:
         return Entity.objects.filter(pk=entity_id, is_active=True).exists()
 
-    if institution_id is not None and not Institution.objects.filter(
-        pk=institution_id,
-        entity_id=entity_id,
-        is_active=True,
-    ).exists():
+    if (
+        institution_id is not None
+        and not Institution.objects.filter(
+            pk=institution_id,
+            entity_id=entity_id,
+            is_active=True,
+        ).exists()
+    ):
         return False
 
     target_unit: OrganizationalUnit | None = None
@@ -291,11 +294,15 @@ def visible_unit_ids(
                 ).values_list("pk", flat=True)
             )
         elif scope.scope_level == RoleScope.UNIT and scope.unit_id is not None:
-            root = OrganizationalUnit.objects.filter(
-                pk=scope.unit_id,
-                entity_id=entity_id,
-                is_active=True,
-            ).only("institution_id").first()
+            root = (
+                OrganizationalUnit.objects.filter(
+                    pk=scope.unit_id,
+                    entity_id=entity_id,
+                    is_active=True,
+                )
+                .only("institution_id")
+                .first()
+            )
             if root is None or (
                 institution_id is not None and root.institution_id != institution_id
             ):
@@ -357,10 +364,13 @@ def assign_role(
         institution_id=institution.pk if institution else None,
         unit_id=unit.pk if unit else None,
     )
-    first_assignment = actor.is_staff and not UserRole.objects.filter(
-        entity=entity,
-        is_active=True,
-    ).exists()
+    first_assignment = (
+        actor.is_staff
+        and not UserRole.objects.filter(
+            entity=entity,
+            is_active=True,
+        ).exists()
+    )
     if not has_grant and not first_assignment:
         raise IamPermissionDenied(
             f"Pengguna tidak memiliki izin iam.role.assign pada entitas {entity.pk}."
@@ -472,9 +482,7 @@ def revoke_role(
     assignment.revoked_at = timezone.now()
     assignment.revoked_by = actor
     assignment.revocation_reason = reason
-    assignment.save(
-        update_fields=["is_active", "revoked_at", "revoked_by", "revocation_reason"]
-    )
+    assignment.save(update_fields=["is_active", "revoked_at", "revoked_by", "revocation_reason"])
     record_audit(
         actor=actor,
         action="iam.role.revoke",

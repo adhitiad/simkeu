@@ -172,7 +172,7 @@ def unit_create(request: HttpRequest) -> HttpResponse:
                 entity=entity,
                 is_active=True,
             )
-        except (Institution.DoesNotExist, ValueError):
+        except Institution.DoesNotExist, ValueError:
             return _forbidden(request)
 
     if request.method == "POST":
@@ -188,7 +188,7 @@ def unit_create(request: HttpRequest) -> HttpResponse:
                     entity=entity,
                     is_active=True,
                 )
-            except (OrganizationalUnit.DoesNotExist, ValueError):
+            except OrganizationalUnit.DoesNotExist, ValueError:
                 messages.error(request, "Unit induk tidak valid.")
                 return redirect("unit_create")
             if institution is None:
