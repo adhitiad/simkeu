@@ -148,6 +148,25 @@ def test_superuser_has_all_permissions(
 
 
 @pytest.mark.django_db
+def test_inactive_entity_denies_all_permission_scopes(
+    rbac_env: tuple[User, User, Entity, OrganizationalUnit, OrganizationalUnit, Role],
+) -> None:
+    _, _, entity, faculty, _, _ = rbac_env
+    superuser = User.objects.create_superuser(
+        username=f"root-inactive-{uuid4().hex[:8]}", password="pw", email=""
+    )
+    entity.is_active = False
+    entity.save(update_fields=["is_active"])
+
+    assert has_permission(superuser, "any.permission", entity_id=entity.pk) is False
+    assert (
+        has_permission(superuser, "any.permission", entity_id=entity.pk, unit_id=faculty.pk)
+        is False
+    )
+    assert visible_unit_ids(superuser, entity.pk, "any.permission") == set()
+
+
+@pytest.mark.django_db
 def test_audit_event_records_actor_and_is_append_only(
     rbac_env: tuple[User, User, Entity, OrganizationalUnit, OrganizationalUnit, Role],
 ) -> None:

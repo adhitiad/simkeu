@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Detail Revisi — SIMKEU{% endblock %}
+{% block content %}
+<div class="mb-6"><a class="text-sm font-semibold text-indigo-700 hover:underline" href="{% url 'budget:allocation_list' %}?entity={{ revision.entity_id }}">← Kembali ke pagu</a><p class="mt-3 text-sm font-semibold uppercase text-indigo-600">Revisi anggaran</p><h1 class="page-title">{{ revision.fiscal_year.code }} · {{ revision.get_status_display }}</h1><p class="mt-1 text-slate-600">{{ revision.reason }}</p><p class="mt-1 text-sm text-slate-500">Tanggal efektif: {{ revision.effective_date|date:"d M Y" }}</p></div>
+<section class="surface">
+  <div class="mb-4 flex flex-wrap items-center justify-between gap-3"><h2 class="section-title">Perubahan pagu</h2><span class="status-pill">{{ revision.get_status_display }}</span></div>
+  <div class="overflow-x-auto"><table class="data-table"><thead><tr><th>Unit / COA</th><th>Sumber dana</th><th class="text-right">Sebelum</th><th class="text-right">Sesudah</th></tr></thead><tbody>
+  {% for item in items %}<tr><td>{{ item.allocation.unit_id }}<span class="block font-mono text-xs text-slate-500">{{ item.allocation.account_id }}</span></td><td>{{ item.allocation.funding_source }}</td><td class="text-right tabular-nums">Rp {{ item.previous_amount }}</td><td class="text-right tabular-nums">Rp {{ item.requested_amount }}</td></tr>{% endfor %}
+  </tbody></table></div>
+  <div class="mt-6 flex flex-wrap gap-2">
+    {% if revision.status == "draft" and can_submit %}<form method="post" action="{% url 'budget:revision_action' revision_id=revision.pk %}">{% csrf_token %}<input type="hidden" name="action" value="submit"><button class="btn-primary" type="submit">Ajukan revisi</button></form>{% endif %}
+    {% if revision.status == "submitted" and can_verify %}<form method="post" action="{% url 'budget:revision_action' revision_id=revision.pk %}">{% csrf_token %}<input type="hidden" name="action" value="verify"><button class="btn-secondary" type="submit">Verifikasi revisi</button></form>{% endif %}
+    {% if revision.status == "verified" and can_approve %}<form method="post" action="{% url 'budget:revision_action' revision_id=revision.pk %}">{% csrf_token %}<input type="hidden" name="action" value="approve"><button class="btn-primary" type="submit">Setujui dan berlakukan</button></form>{% endif %}
+  </div>
+</section>
+{% endblock %}

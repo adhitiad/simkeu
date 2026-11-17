@@ -1,77 +1,46 @@
+{% load static %}
 <!doctype html>
 <html lang="id">
-
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
   <title>{% block title %}SIMKEU PTS{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
   <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.11/dist/htmx.min.js"
     integrity="sha384-2OatzQy1H+Zd/IIrjr1TcuDGqLXeHhbooAyJY1KdQMKnr4LZ22k31GBLdYKHmVjg"
     crossorigin="anonymous"></script>
-  <style>
-    body {
-      font-family: system-ui, sans-serif;
-      margin: 0;
-      background: #f8fafc;
-      color: #0f172a;
-    }
-
-    header {
-      background: #0f172a;
-      color: #fff;
-      padding: 1rem 2rem;
-    }
-
-    header nav {
-      display: inline-block;
-      margin-left: 2rem;
-    }
-
-    header nav a {
-      color: #e2e8f0;
-      margin: 0 0.5rem;
-      text-decoration: none;
-    }
-
-    main {
-      padding: 2rem;
-      max-width: 1100px;
-      margin: 0 auto;
-    }
-
-    .card {
-      background: #fff;
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
-      padding: 1.25rem;
-    }
-
-    .grid {
-      display: grid;
-      gap: 1rem;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    }
-  </style>
 </head>
-
-<body>
-  <header>
-    <strong>SIMKEU PTS</strong> — Sistem Informasi Keuangan
-    <nav>
-      {% if user.is_authenticated %}
-      <a href="{% url 'dashboard' %}">Dasbor</a>
-      <a href="{% url 'entity_list' %}">Entitas</a>
-      <a href="{% url 'unit_list' %}">Unit</a>
-      <a href="{% url 'role_assignment_list' %}">Peran</a>
-      <a href="{% url 'logout' %}">Keluar</a>
-      {% else %}
-      <a href="{% url 'login' %}">Masuk</a>
-      {% endif %}
-    </nav>
+<body class="min-h-screen bg-slate-50 font-sans text-slate-900 antialiased">
+  <header class="border-b border-slate-800 bg-slate-950 text-white shadow-sm">
+    <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
+      <a href="{% url 'home' %}" class="flex items-center gap-3">
+        <span class="grid h-10 w-10 place-items-center rounded-xl bg-indigo-500 text-lg font-black">S</span>
+        <span><strong class="block text-sm tracking-wide">SIMKEU PTS</strong><span class="block text-xs text-slate-400">Sistem Informasi Keuangan</span></span>
+      </a>
+      <nav aria-label="Navigasi utama" class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm font-medium text-slate-300">
+        {% if user.is_authenticated %}
+          <a class="hover:text-white" href="{% url 'dashboard' %}">Dasbor</a>
+          <a class="hover:text-white" href="{% url 'budget:dashboard' %}">Anggaran</a>
+          <a class="hover:text-white" href="{% url 'entity_list' %}">Entitas</a>
+          <a class="hover:text-white" href="{% url 'unit_list' %}">Unit</a>
+          <a class="hover:text-white" href="{% url 'role_assignment_list' %}">Peran</a>
+          <a class="rounded-lg bg-white/10 px-3 py-2 text-white hover:bg-white/15" href="{% url 'logout' %}">Keluar</a>
+        {% else %}
+          <a class="rounded-lg bg-indigo-500 px-3 py-2 text-white hover:bg-indigo-400" href="{% url 'login' %}">Masuk</a>
+        {% endif %}
+      </nav>
+    </div>
   </header>
-  <main>
+  <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    {% if messages %}
+      <div class="mb-6 space-y-2" aria-live="polite">
+        {% for message in messages %}
+          <div class="rounded-xl border px-4 py-3 text-sm {% if message.tags == 'error' %}border-rose-200 bg-rose-50 text-rose-800{% elif message.tags == 'success' %}border-emerald-200 bg-emerald-50 text-emerald-800{% else %}border-slate-200 bg-white text-slate-700{% endif %}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
     {% block content %}{% endblock %}
   </main>
 </body>
-
 </html>

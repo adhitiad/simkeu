@@ -1,0 +1,69 @@
+name: Budget Management CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - adhitiad_gpt
+
+permissions:
+  contents: read
+
+concurrency:
+  group: budget-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  budget:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: simkeu
+          POSTGRES_USER: simkeu
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U simkeu -d simkeu"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      SECRET_KEY: ${{ github.run_id }}-${{ github.run_attempt }}-ephemeral-ci-key
+      DEBUG: "True"
+      ALLOWED_HOSTS: localhost,127.0.0.1
+      DATABASE_URL: postgresql://simkeu@localhost:5432/simkeu
+      CELERY_TASK_ALWAYS_EAGER: "True"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14.5"
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+      - name: Install Python dependencies
+        run: uv sync --locked
+      - name: Install CSS dependencies
+        run: npm install --no-audit --no-fund
+      - name: Build Tailwind CSS
+        run: npm run css:build
+      - name: Django system checks
+        run: uv run python manage.py check
+      - name: Migration consistency
+        run: uv run python manage.py makemigrations --check --dry-run
+      - name: Ruff
+        run: uv run ruff check apps/budget apps/platform_app/services.py tests/test_budget.py simkeu/urls.py
+      - name: Ruff format
+        run: uv run ruff format --check --diff apps/budget apps/platform_app/services.py tests/test_budget.py simkeu/urls.py
+      - name: Budget tests
+        run: uv run pytest -q tests/test_budget.py tests/test_p0_organization.py tests/test_rbac.py

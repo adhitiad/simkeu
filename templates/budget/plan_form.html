@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Dokumen Anggaran Baru — SIMKEU{% endblock %}
+{% block content %}
+<div class="mb-6"><a class="text-sm font-semibold text-indigo-700 hover:underline" href="{% url 'budget:dashboard' %}?entity={{ entity.pk }}">← Kembali ke anggaran</a><h1 class="page-title mt-3">Buat dokumen anggaran</h1><p class="text-sm text-slate-500">{{ entity.name }}</p></div>
+<form method="post" class="surface max-w-2xl space-y-4">
+  {% csrf_token %}
+  {% for field in form %}
+    <div><label class="field-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+      {% if field.name == "fiscal_year_id" %}
+        <select class="field" name="fiscal_year_id" id="{{ field.id_for_label }}" required><option value="">Pilih tahun buku</option>{% for year in fiscal_years %}<option value="{{ year.pk }}" {% if form.fiscal_year_id.value|stringformat:"s" == year.pk|stringformat:"s" %}selected{% endif %}>{{ year.code }} — {{ year.name }}</option>{% endfor %}</select>
+      {% elif field.name == "unit_id" %}
+        <select class="field" name="unit_id" id="{{ field.id_for_label }}"><option value="">Pilih unit untuk RKAT</option>{% for unit in units %}<option value="{{ unit.pk }}" {% if form.unit_id.value|stringformat:"s" == unit.pk|stringformat:"s" %}selected{% endif %}>{{ unit.code }} — {{ unit.name }}</option>{% endfor %}</select>
+      {% else %}{{ field }}{% endif %}
+      {% if field.errors %}<p class="field-error">{{ field.errors|join:", " }}</p>{% endif %}
+    </div>
+  {% endfor %}
+  <p class="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">RKAT dibuat per unit. RAPBU merupakan konsolidasi badan hukum; buat RAPBU hasil konsolidasi dari RKAT yang telah disetujui melalui halaman anggaran.</p>
+  <button class="btn-primary" type="submit">Buat draf</button>
+</form>
+{% endblock %}

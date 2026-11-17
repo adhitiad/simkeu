@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}{{ plan.plan_type }} — SIMKEU{% endblock %}
+{% block content %}
+<div class="mb-6 flex flex-wrap items-start justify-between gap-4">
+  <div><a class="text-sm font-semibold text-indigo-700 hover:underline" href="{% url 'budget:dashboard' %}?entity={{ plan.entity_id }}">← Kembali ke anggaran</a><p class="mt-3 text-sm font-semibold uppercase text-indigo-600">{{ plan.plan_type }} · versi {{ plan.version }}</p><h1 class="page-title">{{ plan.title }}</h1><p class="mt-1 text-sm text-slate-500">{{ plan.fiscal_year.name }} · {{ plan.get_status_display }}</p></div>
+  <div class="flex flex-wrap gap-2">
+    {% if plan.status == "draft" and can_submit %}<form method="post" action="{% url 'budget:plan_action' plan_id=plan.pk %}">{% csrf_token %}<input type="hidden" name="action" value="submit"><button class="btn-primary" type="submit">Ajukan dokumen</button></form>{% endif %}
+    {% if plan.status == "submitted" and can_review %}<form method="post" action="{% url 'budget:plan_action' plan_id=plan.pk %}">{% csrf_token %}<input type="hidden" name="action" value="review"><button class="btn-secondary" type="submit">Tandai selesai review</button></form>{% endif %}
+    {% if plan.status == "review" and can_approve %}<form method="post" action="{% url 'budget:plan_action' plan_id=plan.pk %}">{% csrf_token %}<input type="hidden" name="action" value="approve"><button class="btn-primary" type="submit">Setujui dokumen</button></form>{% endif %}
+    {% if can_create_apbu %}<form method="post" action="{% url 'budget:apbu_from_rapbu' rapbu_id=plan.pk %}">{% csrf_token %}<button class="btn-secondary" type="submit">Buat APBU dari RAPBU</button></form>{% endif %}
+  </div>
+</div>
+
+<div class="surface">
+  <div class="mb-4 flex flex-wrap items-center justify-between gap-3"><h2 class="section-title">Rincian anggaran</h2><p class="text-sm font-semibold text-slate-600">Total: <span class="tabular-nums">Rp {{ total }}</span></p></div>
+  {% if lines %}
+  <div class="overflow-x-auto"><table class="data-table min-w-[900px]"><thead><tr><th>#</th><th>Unit</th><th>Akun COA</th><th>Sumber dana</th><th>Uraian</th><th>Program</th><th>Jadwal</th><th class="text-right">Anggaran</th></tr></thead><tbody>
+    {% for line in lines %}<tr><td>{{ line.line_number }}</td><td>{{ line.unit_id }}</td><td class="font-mono text-xs">{{ line.account_id }}</td><td>{{ line.funding_source }}</td><td class="max-w-xs"><span class="font-medium">{{ line.description }}</span>{% if line.is_restricted %}<span class="mt-1 block text-xs text-amber-700">Dana terikat: {{ line.restriction_note }}</span>{% endif %}<span class="mt-1 block text-xs text-slate-500">{{ line.objective }}</span></td><td>{{ line.program_code|default:"—" }}</td><td>{{ line.schedule_start|date:"d/m/Y"|default:"—" }}{% if line.schedule_end %}–{{ line.schedule_end|date:"d/m/Y" }}{% endif %}</td><td class="text-right tabular-nums">Rp {{ line.amount }}</td></tr>{% endfor %}
+  </tbody></table></div>
+  {% else %}<p class="empty-state">Belum ada rincian anggaran pada scope yang dapat Anda akses.</p>{% endif %}
+</div>
+
+{% if can_add_line %}
+<section class="surface mt-6">
+  <h2 class="section-title mb-4">Tambah baris anggaran</h2>
+  <form method="post" action="{% url 'budget:plan_line_create' plan_id=plan.pk %}" class="grid gap-4 md:grid-cols-2">
+    {% csrf_token %}
+    {% for field in form %}
+      <div class="{% if field.name == 'description' or field.name == 'objective' or field.name == 'output' or field.name == 'restriction_note' %}md:col-span-2{% endif %}">
+        <label class="field-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}
+        {% if field.errors %}<p class="field-error">{{ field.errors|join:", " }}</p>{% endif %}
+      </div>
+    {% endfor %}
+    <div class="md:col-span-2"><button class="btn-primary" type="submit">Tambah rincian</button></div>
+  </form>
+</section>
+{% endif %}
+{% endblock %}
