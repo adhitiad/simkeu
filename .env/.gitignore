@@ -1,0 +1,4 @@
+# Keep local environment files ignored; only *.example templates are tracked.
+*
+!.gitignore
+!*.example

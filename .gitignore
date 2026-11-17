@@ -3,7 +3,8 @@
 __pycache__/
 *.py[cod]
 .env
-.env/
+!.env/
+.env/*
 !.env/.gitignore
 !.env/*.example
 staticfiles/*

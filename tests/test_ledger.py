@@ -1,25 +1,264 @@
+from __future__ import annotations
+
+from datetime import date
+from uuid import UUID, uuid4
+
 import pytest
+from django.contrib.auth.models import User
+from django.db import DatabaseError, transaction
 
-from apps.ledger.services import Journal, JournalLine, post
+from apps.ledger.models import (
+    Account,
+    AccountingPeriod,
+    JournalEntry,
+    JournalLineRecord,
+    PeriodStatus,
+)
+from apps.ledger.services import (
+    DuplicateJournalError,
+    InvalidJournalError,
+    Journal,
+    JournalLine,
+    MakerCheckerError,
+    PeriodClosedError,
+    close_period,
+    post,
+    validate_journal,
+)
+from apps.ledger.reports import build_trial_balance
 
 
-def _journal(debit: int, credit: int) -> Journal:
+def _journal(
+    account_debit: UUID,
+    account_credit: UUID,
+    *,
+    source_id: str = "payment-001",
+    debit: int = 100_000,
+    credit: int = 100_000,
+) -> Journal:
     return Journal(
-        entity_id=1,
-        business_date="2026-11-17",
+        entity_id=10,
+        business_date=date(2026, 11, 17),
         source_type="payment",
-        source_id="p-1",
+        source_id=source_id,
+        description="Pembayaran mahasiswa",
         lines=[
-            JournalLine(account_id=1, debit=debit, credit=0),
-            JournalLine(account_id=2, debit=0, credit=credit),
+            JournalLine(account_id=account_debit, debit=debit, credit=0),
+            JournalLine(account_id=account_credit, debit=0, credit=credit),
         ],
     )
 
 
+def _ledger_fixture() -> tuple[User, AccountingPeriod, Account, Account]:
+    actor = User.objects.create_user(
+        username=f"finance-{uuid4().hex[:10]}",
+        password="test-password-only",
+        is_staff=True,
+    )
+    cash = Account.objects.create(
+        entity_id=10,
+        code="1101",
+        name="Kas Bank",
+        account_type="asset",
+        normal_balance="debit",
+        created_by=actor,
+    )
+    receivable = Account.objects.create(
+        entity_id=10,
+        code="1201",
+        name="Piutang Mahasiswa",
+        account_type="asset",
+        normal_balance="debit",
+        created_by=actor,
+    )
+    period = AccountingPeriod.objects.create(
+        entity_id=10,
+        name="November 2026",
+        starts_on=date(2026, 11, 1),
+        ends_on=date(2026, 11, 30),
+        created_by=actor,
+    )
+    return actor, period, cash, receivable
+
+
 def test_journal_balanced() -> None:
-    post(_journal(100_000, 100_000))
+    journal = _journal(uuid4(), uuid4())
+    validate_journal(journal)
 
 
 def test_journal_unbalanced_rejected() -> None:
-    with pytest.raises(ValueError):
-        post(_journal(100_000, 50_000))
+    journal = _journal(uuid4(), uuid4(), debit=100_000, credit=50_000)
+    with pytest.raises(InvalidJournalError):
+        validate_journal(journal)
+
+
+def test_journal_requires_integer_rupiah() -> None:
+    journal = _journal(uuid4(), uuid4())
+    invalid_line = JournalLine(
+        account_id=journal.lines[0].account_id,
+        debit=True,
+        credit=0,
+    )
+    invalid = Journal(
+        entity_id=journal.entity_id,
+        business_date=journal.business_date,
+        source_type=journal.source_type,
+        source_id=journal.source_id,
+        lines=[invalid_line, journal.lines[1]],
+    )
+    with pytest.raises(InvalidJournalError):
+        validate_journal(invalid)
+
+
+@pytest.mark.django_db
+def test_post_persists_balanced_immutable_journal() -> None:
+    actor, period, cash, receivable = _ledger_fixture()
+    entry = post(_journal(cash.pk, receivable.pk), actor_id=actor.pk)
+
+    lines = list(JournalLineRecord.objects.filter(entry=entry).order_by("line_number"))
+    assert entry.period_id == period.pk
+    assert len(lines) == 2
+    assert sum(line.debit for line in lines) == sum(line.credit for line in lines) == 100_000
+
+    with pytest.raises(DatabaseError), transaction.atomic():
+        JournalEntry.objects.filter(pk=entry.pk).update(description="diubah")
+
+
+@pytest.mark.django_db
+def test_post_is_idempotent_for_same_source_and_payload() -> None:
+    actor, _, cash, receivable = _ledger_fixture()
+    journal = _journal(cash.pk, receivable.pk)
+    first = post(journal, actor_id=actor.pk)
+    second = post(journal, actor_id=actor.pk)
+
+    assert first.pk == second.pk
+    assert JournalEntry.objects.count() == 1
+    assert JournalLineRecord.objects.count() == 2
+
+
+@pytest.mark.django_db
+def test_same_source_with_different_payload_is_rejected() -> None:
+    actor, _, cash, receivable = _ledger_fixture()
+    post(_journal(cash.pk, receivable.pk), actor_id=actor.pk)
+
+    changed = _journal(cash.pk, receivable.pk, debit=200_000, credit=200_000)
+    with pytest.raises(DuplicateJournalError):
+        post(changed, actor_id=actor.pk)
+
+
+@pytest.mark.django_db
+def test_post_to_closed_period_is_rejected() -> None:
+    actor, period, cash, receivable = _ledger_fixture()
+    checker = User.objects.create_user(
+        username=f"checker-{uuid4().hex[:10]}",
+        password="test-password-only",
+        is_staff=True,
+    )
+    close_period(period.pk, maker_id=actor.pk, checker_id=checker.pk)
+
+    with pytest.raises(PeriodClosedError):
+        post(_journal(cash.pk, receivable.pk), actor_id=actor.pk)
+
+
+@pytest.mark.django_db
+def test_period_close_requires_two_distinct_staff_users() -> None:
+    maker, period, _, _ = _ledger_fixture()
+    checker = User.objects.create_user(
+        username=f"checker-{uuid4().hex[:10]}",
+        password="test-password-only",
+        is_staff=True,
+    )
+
+    with pytest.raises(MakerCheckerError):
+        close_period(period.pk, maker_id=maker.pk, checker_id=maker.pk)
+
+    closed = close_period(period.pk, maker_id=maker.pk, checker_id=checker.pk)
+    assert closed.status == PeriodStatus.CLOSED
+    assert closed.close_requested_by_id == maker.pk
+    assert closed.closed_by_id == checker.pk
+
+
+@pytest.mark.django_db
+def test_account_classification_is_immutable_after_ledger_usage() -> None:
+    actor, _, cash, receivable = _ledger_fixture()
+    post(_journal(cash.pk, receivable.pk), actor_id=actor.pk)
+
+    with pytest.raises(DatabaseError), transaction.atomic():
+        Account.objects.filter(pk=cash.pk).update(account_type="revenue")
+
+
+@pytest.mark.django_db
+def test_account_period_dates_are_immutable_after_journal_posting() -> None:
+    actor, period, cash, receivable = _ledger_fixture()
+    post(_journal(cash.pk, receivable.pk), actor_id=actor.pk)
+
+    with pytest.raises(DatabaseError), transaction.atomic():
+        AccountingPeriod.objects.filter(pk=period.pk).update(ends_on=date(2026, 12, 31))
+
+
+@pytest.mark.django_db
+def test_overlapping_accounting_periods_are_rejected_by_database() -> None:
+    actor, _, _, _ = _ledger_fixture()
+
+    with pytest.raises(DatabaseError), transaction.atomic():
+        AccountingPeriod.objects.create(
+            entity_id=10,
+            name="November overlap",
+            starts_on=date(2026, 11, 15),
+            ends_on=date(2026, 12, 15),
+            created_by=actor,
+        )
+
+
+@pytest.mark.django_db
+def test_closed_period_cannot_be_reopened() -> None:
+    maker, period, _, _ = _ledger_fixture()
+    checker = User.objects.create_user(
+        username=f"checker-{uuid4().hex[:10]}",
+        password="test-password-only",
+        is_staff=True,
+    )
+    close_period(period.pk, maker_id=maker.pk, checker_id=checker.pk)
+
+    with pytest.raises(DatabaseError), transaction.atomic():
+        AccountingPeriod.objects.filter(pk=period.pk).update(status=PeriodStatus.OPEN)
+
+
+@pytest.mark.django_db
+def test_trial_balance_includes_all_accounts_and_balanced_closing_values() -> None:
+    actor, _, cash, receivable = _ledger_fixture()
+    Account.objects.create(
+        entity_id=10,
+        code="4101",
+        name="Pendapatan Pendidikan",
+        account_type="revenue",
+        normal_balance="credit",
+        created_by=actor,
+    )
+    post(_journal(cash.pk, receivable.pk), actor_id=actor.pk)
+
+    report = build_trial_balance(entity_id=10, as_of=date(2026, 11, 17))
+
+    assert report.is_balanced is True
+    assert report.total_debit_activity == 100_000
+    assert report.total_credit_activity == 100_000
+    assert report.total_closing_debit == 100_000
+    assert report.total_closing_credit == 100_000
+    assert len(report.accounts) == 3
+    unused_account = next(row for row in report.accounts if row.account_code == "4101")
+    assert unused_account.debit_activity == 0
+    assert unused_account.credit_activity == 0
+
+
+@pytest.mark.django_db
+def test_trial_balance_excludes_journals_after_as_of_date() -> None:
+    actor, _, cash, receivable = _ledger_fixture()
+    post(_journal(cash.pk, receivable.pk), actor_id=actor.pk)
+
+    report = build_trial_balance(entity_id=10, as_of=date(2026, 11, 16))
+
+    assert report.is_balanced is True
+    assert report.total_debit_activity == 0
+    assert report.total_credit_activity == 0
+    assert report.total_closing_debit == 0
+    assert report.total_closing_credit == 0
