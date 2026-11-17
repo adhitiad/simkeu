@@ -81,8 +81,7 @@ class JournalCollectionView(APIView):
             except ValueError as exc:
                 return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
             queryset = queryset.filter(
-                Q(business_date__lt=cursor_date)
-                | Q(business_date=cursor_date, id__lt=cursor_id)
+                Q(business_date__lt=cursor_date) | Q(business_date=cursor_date, id__lt=cursor_id)
             )
 
         rows = list(queryset.order_by("-business_date", "-id")[: limit + 1])
