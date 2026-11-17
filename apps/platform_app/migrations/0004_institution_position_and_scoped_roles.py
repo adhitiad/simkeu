@@ -298,7 +298,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddConstraint(
             model_name="institution",
-            constraint=models.UniqueConstraint(fields=("entity", "code"), name="platform_institution_entity_code_uniq"),
+            constraint=models.UniqueConstraint(fields=("entity", "code"), name="plat_inst_entity_code_uniq"),
         ),
         migrations.AddConstraint(
             model_name="institution",
@@ -306,7 +306,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="institution",
-            index=models.Index(fields=["entity", "is_active"], name="platform_inst_entity_active_idx"),
+            index=models.Index(fields=["entity", "is_active"], name="plat_inst_active_idx"),
         ),
         migrations.AddConstraint(
             model_name="organizationalunit",
@@ -342,11 +342,11 @@ class Migration(migrations.Migration):
         ),
         migrations.AddConstraint(
             model_name="userrole",
-            constraint=models.CheckConstraint(condition=Q(scope_level="entity", institution__isnull=True, unit__isnull=True) | Q(scope_level="institution", institution__isnull=False, unit__isnull=True) | Q(scope_level="unit", unit__isnull=False), name="platform_user_role_scope_shape_ck"),
+            constraint=models.CheckConstraint(condition=Q(scope_level="entity", institution__isnull=True, unit__isnull=True) | Q(scope_level="institution", institution__isnull=False, unit__isnull=True) | Q(scope_level="unit", unit__isnull=False), name="plat_user_scope_shape_ck"),
         ),
         migrations.AddConstraint(
             model_name="userrole",
-            constraint=models.CheckConstraint(condition=Q(scope_level__in=["entity", "institution", "unit"]), name="platform_user_role_scope_value_ck"),
+            constraint=models.CheckConstraint(condition=Q(scope_level__in=["entity", "institution", "unit"]), name="plat_user_scope_value_ck"),
         ),
         migrations.RemoveConstraint(
             model_name="userrole",

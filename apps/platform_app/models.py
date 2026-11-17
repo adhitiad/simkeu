@@ -115,7 +115,7 @@ class Institution(models.Model):
         constraints: ClassVar[list[models.BaseConstraint]] = [
             models.UniqueConstraint(
                 fields=["entity", "code"],
-                name="platform_institution_entity_code_uniq",
+                name="plat_inst_entity_code_uniq",
             ),
             models.CheckConstraint(
                 condition=Q(institution_type__in=[choice.value for choice in InstitutionType]),
@@ -125,7 +125,7 @@ class Institution(models.Model):
         indexes: ClassVar[list[models.Index]] = [
             models.Index(
                 fields=["entity", "is_active"],
-                name="platform_inst_entity_active_idx",
+                name="plat_inst_active_idx",
             ),
         ]
 
@@ -397,11 +397,11 @@ class UserRole(models.Model):
                     | Q(scope_level=RoleScope.INSTITUTION, institution__isnull=False, unit__isnull=True)
                     | Q(scope_level=RoleScope.UNIT, unit__isnull=False)
                 ),
-                name="platform_user_role_scope_shape_ck",
+                name="plat_user_scope_shape_ck",
             ),
             models.CheckConstraint(
                 condition=Q(scope_level__in=[choice.value for choice in RoleScope]),
-                name="platform_user_role_scope_value_ck",
+                name="plat_user_scope_value_ck",
             ),
             models.UniqueConstraint(
                 fields=["user", "role", "entity", "scope_level", "institution", "unit"],
