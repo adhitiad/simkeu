@@ -15,6 +15,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import JournalEntry
+from .reports import InvalidTrialBalanceRequest, build_trial_balance
 from .serializers import JournalCreateSerializer, JournalReadSerializer
 from .services import (
     AccountNotFoundError,
@@ -29,7 +30,6 @@ from .services import (
     PeriodNotFoundError,
     post,
 )
-from .reports import InvalidTrialBalanceRequest, build_trial_balance
 
 
 def _encode_cursor(entry: JournalEntry) -> str:
@@ -43,7 +43,7 @@ def _decode_cursor(value: str) -> tuple[date, UUID]:
         decoded = base64.urlsafe_b64decode(padded.encode("ascii")).decode("ascii")
         date_value, id_value = decoded.split(":", maxsplit=1)
         return date.fromisoformat(date_value), UUID(id_value)
-    except (ValueError, UnicodeDecodeError, UnicodeEncodeError, binascii.Error) as exc:
+    except (ValueError, binascii.Error) as exc:
         raise ValueError("Cursor tidak valid.") from exc
 
 
