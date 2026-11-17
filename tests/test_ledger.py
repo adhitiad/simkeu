@@ -188,9 +188,7 @@ def test_account_period_dates_are_immutable_after_journal_posting() -> None:
     post(_journal(cash.pk, receivable.pk), actor_id=actor.pk)
 
     with pytest.raises(DatabaseError), transaction.atomic():
-        AccountingPeriod.objects.filter(pk=period.pk).update(
-            ends_on=date(2026, 12, 31)
-        )
+        AccountingPeriod.objects.filter(pk=period.pk).update(ends_on=date(2026, 12, 31))
 
 
 @pytest.mark.django_db
