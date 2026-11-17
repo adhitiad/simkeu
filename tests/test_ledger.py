@@ -148,8 +148,12 @@ def test_same_source_with_different_payload_is_rejected() -> None:
 @pytest.mark.django_db
 def test_post_to_closed_period_is_rejected() -> None:
     actor, period, cash, receivable = _ledger_fixture()
-    period.status = PeriodStatus.CLOSED
-    period.save(update_fields=["status"])
+    checker = User.objects.create_user(
+        username=f"checker-{uuid4().hex[:10]}",
+        password="test-password-only",
+        is_staff=True,
+    )
+    close_period(period.pk, maker_id=actor.pk, checker_id=checker.pk)
 
     with pytest.raises(PeriodClosedError):
         post(_journal(cash.pk, receivable.pk), actor_id=actor.pk)
