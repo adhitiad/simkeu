@@ -34,7 +34,16 @@ class InstitutionAdmin(admin.ModelAdmin):
 
 @admin.register(OrganizationalUnit)
 class OrganizationalUnitAdmin(admin.ModelAdmin):
-    list_display = ("code", "name", "entity", "institution", "parent", "unit_type", "is_cost_center", "is_active")
+    list_display = (
+        "code",
+        "name",
+        "entity",
+        "institution",
+        "parent",
+        "unit_type",
+        "is_cost_center",
+        "is_active",
+    )
     list_filter = ("entity", "institution", "unit_type", "is_cost_center", "is_active")
     search_fields = ("code", "name")
     autocomplete_fields = ("entity", "institution", "parent")
@@ -51,7 +60,15 @@ class PositionAdmin(admin.ModelAdmin):
 
 @admin.register(PositionAssignment)
 class PositionAssignmentAdmin(admin.ModelAdmin):
-    list_display = ("user", "position", "entity", "institution", "unit", "valid_from", "valid_until")
+    list_display = (
+        "user",
+        "position",
+        "entity",
+        "institution",
+        "unit",
+        "valid_from",
+        "valid_until",
+    )
     list_filter = ("entity", "institution", "position__category")
     search_fields = ("user__username", "user__email", "position__name", "appointment_reference")
     autocomplete_fields = ("user", "position", "entity", "institution", "unit", "appointed_by")
@@ -83,10 +100,28 @@ class RolePermissionAdmin(admin.ModelAdmin):
 
 @admin.register(UserRole)
 class UserRoleAdmin(admin.ModelAdmin):
-    list_display = ("user", "role", "entity", "scope_level", "institution", "unit", "valid_from", "valid_until", "is_active")
+    list_display = (
+        "user",
+        "role",
+        "entity",
+        "scope_level",
+        "institution",
+        "unit",
+        "valid_from",
+        "valid_until",
+        "is_active",
+    )
     list_filter = ("entity", "scope_level", "institution", "role", "is_active")
     search_fields = ("user__username", "user__email", "role__code")
-    autocomplete_fields = ("user", "role", "entity", "institution", "unit", "granted_by", "revoked_by")
+    autocomplete_fields = (
+        "user",
+        "role",
+        "entity",
+        "institution",
+        "unit",
+        "granted_by",
+        "revoked_by",
+    )
     readonly_fields = ("granted_at", "revoked_at")
 
 

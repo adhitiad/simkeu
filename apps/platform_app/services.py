@@ -296,7 +296,9 @@ def visible_unit_ids(
                 entity_id=entity_id,
                 is_active=True,
             ).only("institution_id").first()
-            if root is None or (institution_id is not None and root.institution_id != institution_id):
+            if root is None or (
+                institution_id is not None and root.institution_id != institution_id
+            ):
                 continue
             visible.update(
                 _unit_descendants(

@@ -261,7 +261,9 @@ def unit_create(request: HttpRequest) -> HttpResponse:
     if visible is not None:
         parents = parents.filter(pk__in=visible)
     institutions = Institution.objects.filter(entity=entity, is_active=True)
-    if not request.user.is_superuser and not has_permission_any_entity(request.user, "iam.unit.create"):
+    if not request.user.is_superuser and not has_permission_any_entity(
+        request.user, "iam.unit.create"
+    ):
         institutions = [
             item
             for item in institutions

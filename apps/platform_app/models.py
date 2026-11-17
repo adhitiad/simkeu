@@ -188,13 +188,17 @@ class OrganizationalUnit(models.Model):
     def clean(self) -> None:
         super().clean()
         if self.institution_id and self.institution.entity_id != self.entity_id:
-            raise ValidationError({"institution": "Institusi harus berada pada badan hukum yang sama."})
+            raise ValidationError(
+                {"institution": "Institusi harus berada pada badan hukum yang sama."}
+            )
         if self.parent_id and self.parent:
             if (
                 self.parent.entity_id != self.entity_id
                 or self.parent.institution_id != self.institution_id
             ):
-                raise ValidationError({"parent": "Unit induk harus berada pada badan hukum dan institusi yang sama."})
+                raise ValidationError(
+                    {"parent": "Unit induk harus berada pada badan hukum dan institusi yang sama."}
+                )
             if self.pk and self.parent_id == self.pk:
                 raise ValidationError({"parent": "Unit tidak boleh menjadi induk dirinya sendiri."})
 
@@ -231,7 +235,11 @@ class PositionAssignment(models.Model):
         related_name="simkeu_position_assignments",
     )
     position = models.ForeignKey(Position, on_delete=models.PROTECT, related_name="assignments")
-    entity = models.ForeignKey(Entity, on_delete=models.PROTECT, related_name="position_assignments")
+    entity = models.ForeignKey(
+        Entity,
+        on_delete=models.PROTECT,
+        related_name="position_assignments",
+    )
     institution = models.ForeignKey(
         Institution,
         on_delete=models.PROTECT,
@@ -268,7 +276,10 @@ class PositionAssignment(models.Model):
             ),
         ]
         indexes: ClassVar[list[models.Index]] = [
-            models.Index(fields=["user", "valid_from", "valid_until"], name="platform_pos_user_dates_idx"),
+            models.Index(
+                fields=["user", "valid_from", "valid_until"],
+                name="platform_pos_user_dates_idx",
+            ),
             models.Index(fields=["entity", "unit"], name="platform_pos_entity_unit_idx"),
         ]
 
@@ -394,7 +405,11 @@ class UserRole(models.Model):
             models.CheckConstraint(
                 condition=(
                     Q(scope_level=RoleScope.ENTITY, institution__isnull=True, unit__isnull=True)
-                    | Q(scope_level=RoleScope.INSTITUTION, institution__isnull=False, unit__isnull=True)
+                    | Q(
+                        scope_level=RoleScope.INSTITUTION,
+                        institution__isnull=False,
+                        unit__isnull=True,
+                    )
                     | Q(scope_level=RoleScope.UNIT, unit__isnull=False)
                 ),
                 name="plat_user_scope_shape_ck",
@@ -418,13 +433,17 @@ class UserRole(models.Model):
     def clean(self) -> None:
         super().clean()
         if self.valid_until and self.valid_until < self.valid_from:
-            raise ValidationError({"valid_until": "Tanggal akhir tidak boleh sebelum tanggal mulai."})
+            raise ValidationError(
+                {"valid_until": "Tanggal akhir tidak boleh sebelum tanggal mulai."}
+            )
         if self.institution_id and self.institution.entity_id != self.entity_id:
             raise ValidationError({"institution": "Institusi harus berada pada entitas yang sama."})
         if self.unit_id:
             unit = self.unit
             if unit.entity_id != self.entity_id or unit.institution_id != self.institution_id:
-                raise ValidationError({"unit": "Unit harus berada pada entitas dan institusi yang sama."})
+                raise ValidationError(
+                    {"unit": "Unit harus berada pada entitas dan institusi yang sama."}
+                )
         if self.scope_level == RoleScope.ENTITY and (self.institution_id or self.unit_id):
             raise ValidationError("Scope badan hukum tidak boleh menunjuk institusi atau unit.")
         if self.scope_level == RoleScope.INSTITUTION and (not self.institution_id or self.unit_id):
