@@ -27,7 +27,7 @@ Payload POST membutuhkan entity_id, business_date, source_type, source_id, descr
 
 Trial balance menghitung seluruh jurnal posted sampai tanggal as_of. Saldo awal wajib direpresentasikan sebagai jurnal pembukaan; laporan tidak mengarang saldo dari data di luar ledger.
 
-API saat ini dibatasi untuk pengguna Django is_staff. RBAC berbasis entitas/fakultas/prodi perlu diselesaikan sebelum akses diberikan kepada operator unit.
+Dashboard dan master data platform sudah memiliki IAM/RBAC berbasis badan hukum, institusi, dan unit. Namun API ledger yang sudah ada masih menggunakan gerbang Django is_staff; jangan membuka endpoint ledger kepada operator unit sebelum setiap service/query dipindahkan ke permission code dan filter scope yang sama.
 
 ### Belum diimplementasikan
 
@@ -77,7 +77,7 @@ Default konfigurasi membaca .env/.env, lalu overlay .env/.env.local. Untuk stagi
 
 - simkeu/: konfigurasi Django, URL, Celery, WSGI/ASGI.
 - apps/core: beranda dan health endpoint.
-- apps/platform_app: outbox dan audit platform.
+- apps/platform_app: badan hukum (Entity), institusi (Institution), unit organisasi/cost center, jabatan dan penugasannya, RBAC/permission, audit append-only, dan outbox.
 - apps/ledger: bagan akun, periode, jurnal double-entry, trial balance, API ledger.
 - apps/billing, apps/payment, apps/budget: modul lanjutan.
 - apps/academic: anti-corruption layer SIAKAD Sister dan SIMPEG.
@@ -89,6 +89,7 @@ Endpoint operasional: /healthz, /readyz, /metrics, /api/docs.
 
 Dokumen rancangan:
 - docs/architecture/pts-governance-and-operating-model.md
+- docs/architecture/organization-rbac.md
 - docs/workflows/pts-financial-workflows.md
 - docs/reporting/pts-financial-report-templates.md
 - docs/ai/openrouter-financial-assistant.md

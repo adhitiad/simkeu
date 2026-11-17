@@ -9,20 +9,30 @@
   <input type="hidden" name="entity" value="{{ entity.pk }}">
   <p><label>Pengguna <select name="user">{% for user in users %}<option value="{{ user.pk }}">{{ user.username }}</option>{% endfor %}</select></label></p>
   <p><label>Peran <select name="role">{% for role in roles %}<option value="{{ role.pk }}">{{ role.name }}</option>{% endfor %}</select></label></p>
-  <p><label>Unit <select name="unit"><option value="">Seluruh entitas</option>{% for unit in units %}<option value="{{ unit.pk }}">{{ unit.name }}</option>{% endfor %}</select></label></p>
+  <p><label>Institusi <select name="institution">
+    <option value="">Seluruh badan hukum / otomatis dari unit</option>
+    {% for institution in institutions %}<option value="{{ institution.pk }}">{{ institution.code }} — {{ institution.name }}</option>{% endfor %}
+  </select></label></p>
+  <p><label>Unit <select name="unit"><option value="">— Tidak dibatasi ke unit —</option>{% for unit in units %}<option value="{{ unit.pk }}">{{ unit.institution.code|default:"Badan hukum" }} / {{ unit.name }}</option>{% endfor %}</select></label></p>
   <button type="submit">Berikan peran</button>
 </form>
 <table class="card">
-  <thead><tr><th>Pengguna</th><th>Peran</th><th>Unit</th><th>Status</th></tr></thead>
+  <thead><tr><th>Pengguna</th><th>Peran</th><th>Scope</th><th>Status</th><th>Berlaku</th></tr></thead>
   <tbody>
     {% for item in assignments %}
-    <tr><td>{{ item.user.username }}</td><td>{{ item.role.name }}</td><td>{{ item.unit|default:"*" }}</td><td>{% if item.is_active %}Aktif{% else %}Nonaktif{% endif %}</td></tr>
+    <tr>
+      <td>{{ item.user.username }}</td>
+      <td>{{ item.role.name }}</td>
+      <td>{% if item.unit %}{{ item.unit }}{% elif item.institution %}{{ item.institution }}{% else %}Badan hukum{% endif %}</td>
+      <td>{% if item.is_active %}Aktif{% else %}Nonaktif{% endif %}</td>
+      <td>{{ item.valid_from }} — {{ item.valid_until|default:"Tidak terbatas" }}</td>
+    </tr>
     {% empty %}
-    <tr><td colspan="4">Belum ada penugasan.</td></tr>
+    <tr><td colspan="5">Belum ada penugasan.</td></tr>
     {% endfor %}
   </tbody>
 </table>
 {% else %}
-<p>Belum ada entitas yang dapat diakses.</p>
+<p>Belum ada badan hukum yang dapat diakses.</p>
 {% endif %}
 {% endblock %}
