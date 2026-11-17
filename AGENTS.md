@@ -5,8 +5,8 @@ Sistem Informasi Keuangan universitas PTS: tagihan, pembayaran, ledger double-en
 ## Kondisi repository
 
 - Scaffold Django + uv tersedia dengan modul core, platform_app, billing, payment, ledger, budget, dan academic.
-- Branch feat/ledger-core mengimplementasikan bagan akun, periode akuntansi, posting jurnal double-entry, idempotensi sumber, API ledger, dan proteksi PostgreSQL append-only.
-- Billing, payment, budget, pajak, payroll, laporan, audit bisnis, dan sinkronisasi read model akademik masih memerlukan implementasi.
+- Branch feat/ledger-core mengimplementasikan fondasi ledger dan trial balance. Dokumen target tata kelola PTS, workflow, pelaporan, dan OpenRouter berada di docs/; dokumen tersebut adalah rancangan, bukan klaim bahwa seluruh modul bisnis sudah berjalan.
+- Billing, payment, budget, expenditure, verification, workflow, treasury, reporting, AI assistant, pajak, payroll, audit bisnis, dan sinkronisasi read model akademik masih memerlukan implementasi.
 - PostgreSQL lokal diperlukan untuk migrasi dan pengujian integrasi database.
 
 ## Aturan kerja
@@ -18,10 +18,18 @@ Baca aturan terperinci dalam .agents/rules sebelum mengubah kode:
 - 15-performance.md: performa, hot path, dan pagination.
 - 20-python.md: Python, Django, ORM, transaksi, dan typing.
 - 30-database.md: PostgreSQL, schema, constraint, serta migrasi.
-- 40-domain-keuangan.md: billing, payment, ledger, pajak, dan periode.
+- 40-domain-keuangan.md: billing, payment, ledger, pajak, dan periode. Baca juga docs/workflows/pts-financial-workflows.md dan docs/reporting/pts-financial-report-templates.md.
 - 50-frontend.md: Django templates, HTMX, dan aksesibilitas.
 - 60-security.md: autentikasi, otorisasi, webhook, PII, dan audit.
 - 70-testing.md: test dan quality gate.
+
+## Konteks PTS dan tata kelola
+
+- SIMKEU menargetkan PTS yang diselenggarakan badan penyelenggara berbadan hukum nirlaba.
+- Bedakan LegalEntity (badan hukum pelapor), Institution (PTS), dan OrganizationUnit (fakultas/biro/unit/cost center). entity_id ledger mengidentifikasi badan hukum, bukan unit anggaran.
+- Matriks jabatan, limit, dan sign-off tidak boleh di-hardcode; ikuti Statuta, AD/ART, SOP, dan delegasi tertulis.
+- Pisahkan laporan manajemen universitas dari laporan keuangan badan hukum.
+- Standar akuntansi dipilih melalui ReportProfile setelah dikonfirmasi pengurus dan akuntan/auditor.
 
 ## Stack
 
