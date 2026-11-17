@@ -46,11 +46,7 @@ def build_trial_balance(*, entity_id: int, as_of: date) -> TrialBalance:
     Opening balances must be represented by posted opening journals. Values
     are integer Rupiah and each account is included, even with zero activity.
     """
-    if (
-        not isinstance(entity_id, int)
-        or isinstance(entity_id, bool)
-        or entity_id <= 0
-    ):
+    if not isinstance(entity_id, int) or isinstance(entity_id, bool) or entity_id <= 0:
         raise InvalidTrialBalanceRequest("entity_id harus berupa integer positif.")
     if not isinstance(as_of, date) or isinstance(as_of, datetime):
         raise InvalidTrialBalanceRequest("as_of harus berupa tanggal.")
