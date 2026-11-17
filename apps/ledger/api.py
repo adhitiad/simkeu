@@ -17,7 +17,6 @@ from rest_framework.views import APIView
 from .models import JournalEntry
 from .reports import InvalidTrialBalanceRequest, build_trial_balance
 from .serializers import JournalCreateSerializer, JournalReadSerializer
-from .serializers import JournalCreateSerializer, JournalReadSerializer
 from .services import (
     AccountNotFoundError,
     AuthorizationError,
@@ -166,13 +165,13 @@ class TrialBalanceView(APIView):
             entity_id = int(raw_entity_id)
             as_of = date.fromisoformat(raw_as_of)
             report = build_trial_balance(entity_id=entity_id, as_of=as_of)
+        except InvalidTrialBalanceRequest as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
         except (ValueError, TypeError) as exc:
             return Response(
                 {"detail": str(exc) or "Parameter laporan tidak valid."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        except InvalidTrialBalanceRequest as exc:
-            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(
             {
