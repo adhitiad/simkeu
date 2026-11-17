@@ -14,6 +14,7 @@ from apps.ledger.models import (
     JournalLineRecord,
     PeriodStatus,
 )
+from apps.ledger.reports import build_trial_balance
 from apps.ledger.services import (
     DuplicateJournalError,
     InvalidJournalError,
@@ -25,7 +26,6 @@ from apps.ledger.services import (
     post,
     validate_journal,
 )
-from apps.ledger.reports import build_trial_balance
 
 
 def _journal(

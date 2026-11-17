@@ -47,6 +47,14 @@ alwaysApply: false
 - Rekonsiliasi harian: settlement provider/rekening koran vs ledger. Selisih masuk exception queue dengan pemilik dan SLA.
 - Refund, pembatalan, dan penghapusan piutang: maker-checker.
 
+## Badan hukum dan unit organisasi PTS
+
+- entity_id adalah badan hukum yang memiliki/melaporkan aset dan kewajiban, bukan ID fakultas atau cost center.
+- Universitas, kampus, fakultas, prodi, biro, program, dan unit usaha menjadi dimensi organisasi/cost center kecuali dokumen hukum menyatakan unit tersebut badan hukum terpisah.
+- Pisahkan tahun buku (fiscal_year) dari tahun akademik/semester (academic_term).
+- Dana terikat memiliki sumber, tujuan, periode, syarat penggunaan, dan saldo rekonsiliasi. Transfer antar-unit dalam satu badan hukum bukan otomatis pendapatan/beban baru badan hukum.
+- Baca docs/workflows/pts-financial-workflows.md sebelum mengubah workflow transaksi PTS.
+
 ## Ledger dan jurnal otomatis
 
 - Double-entry. Setiap jurnal seimbang, bertanggal bisnis, merujuk dokumen sumber (`source_type`, `source_id`), dan idempotent berdasarkan kunci sumber.
@@ -55,8 +63,15 @@ alwaysApply: false
   - Pembayaran diterima: Dr Kas/Bank (atau Rekening VA) / Cr Piutang Mahasiswa.
   - Pengakuan pendapatan per periode: Dr Pendapatan Diterima di Muka / Cr Pendapatan SPP/UKT.
   - Beasiswa/potongan: Dr Beban Beasiswa (atau Potongan) / Cr Piutang Mahasiswa.
-- Pelaporan mengikuti ISAK 35 (aset neto dengan dan tanpa pembatasan). Dana terikat ditandai pada akun/dimensi, bukan tabel terpisah.
+- Pelaporan menggunakan ReportProfile yang disetujui badan hukum. Pertimbangkan SAK EP bila memenuhi kriteria, atau SAK Indonesia dengan ISAK 335 untuk entitas berorientasi nonlaba bila kerangka tersebut dipilih. Jangan menganggap satu standar otomatis berlaku bagi semua PTS. Catat versi dan tanggal efektif standar pada profil. Dana dengan/tanpa pembatasan direpresentasikan melalui akun dan dimensi funding restriction sesuai standar/kebijakan.
 - Period closing: periode tertutup tidak menerima posting. Koreksi lewat jurnal pembalik di periode terbuka.
+
+## Pelaporan PTS
+
+- Pisahkan laporan manajemen universitas (RKAT, komitmen, realisasi, kas, pendapatan, piutang, SPJ) dari laporan keuangan badan hukum.
+- Untuk yayasan, periksa paket laporan tahunan menurut UU Yayasan yang berlaku: posisi keuangan, aktivitas, arus kas, catatan, tanda tangan Pengurus/Pengawas, dan pengesahan Pembina sesuai ketentuan.
+- Laporan yang disahkan disimpan sebagai snapshot immutable dengan standar, periode, mapping COA, filter, timestamp, preparer/reviewer/approver, dan sumber data.
+- Baca docs/reporting/pts-financial-report-templates.md sebelum membuat laporan resmi atau ekspor.
 
 ## Pajak dan payroll
 
