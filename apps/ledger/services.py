@@ -103,7 +103,9 @@ def validate_journal(journal: Journal) -> None:
         if line.debit < 0 or line.credit < 0:
             raise InvalidJournalError("Nominal debit/kredit tidak boleh negatif.")
         if (line.debit > 0) == (line.credit > 0):
-            raise InvalidJournalError("Setiap baris harus berisi debit atau kredit, bukan keduanya.")
+            raise InvalidJournalError(
+                "Setiap baris harus berisi debit atau kredit, bukan keduanya."
+            )
         if not isinstance(line.description, str) or len(line.description) > 255:
             raise InvalidJournalError("Deskripsi baris harus berupa teks maksimal 255 karakter.")
         debit_total += line.debit
@@ -148,7 +150,9 @@ def post(journal: Journal, *, actor_id: int) -> JournalEntry:
 
     actor = User.objects.filter(pk=actor_id, is_active=True, is_staff=True).first()
     if actor is None:
-        raise AuthorizationError("Hanya pengguna aktif dengan hak administrasi keuangan yang dapat mem-posting jurnal.")
+        raise AuthorizationError(
+            "Hanya pengguna aktif dengan hak administrasi keuangan yang dapat mem-posting jurnal."
+        )
 
     with transaction.atomic():
         existing = (
@@ -163,7 +167,9 @@ def post(journal: Journal, *, actor_id: int) -> JournalEntry:
         if existing is not None:
             if _is_same_source(existing, journal):
                 return existing
-            raise DuplicateJournalError("Kunci sumber jurnal sudah digunakan dengan isi yang berbeda.")
+            raise DuplicateJournalError(
+                "Kunci sumber jurnal sudah digunakan dengan isi yang berbeda."
+            )
 
         periods = AccountingPeriod.objects.select_for_update().filter(
             entity_id=journal.entity_id,
@@ -173,9 +179,13 @@ def post(journal: Journal, *, actor_id: int) -> JournalEntry:
         try:
             period = periods.get()
         except AccountingPeriod.DoesNotExist as exc:
-            raise PeriodNotFoundError("Tidak ada periode akuntansi yang mencakup tanggal jurnal.") from exc
+            raise PeriodNotFoundError(
+                "Tidak ada periode akuntansi yang mencakup tanggal jurnal."
+            ) from exc
         except AccountingPeriod.MultipleObjectsReturned as exc:
-            raise PeriodConfigurationError("Konfigurasi periode tumpang tindih untuk tanggal jurnal.") from exc
+            raise PeriodConfigurationError(
+                "Konfigurasi periode tumpang tindih untuk tanggal jurnal."
+            ) from exc
 
         if period.status != PeriodStatus.OPEN:
             raise PeriodClosedError("Jurnal tidak dapat diposting ke periode yang sudah ditutup.")
@@ -187,8 +197,12 @@ def post(journal: Journal, *, actor_id: int) -> JournalEntry:
             .filter(entity_id=journal.entity_id, pk__in=account_ids)
             .order_by("pk")
         }
-        if len(accounts) != len(account_ids) or any(not account.is_active for account in accounts.values()):
-            raise AccountNotFoundError("Satu atau lebih akun tidak ditemukan, tidak aktif, atau di luar entitas.")
+        if len(accounts) != len(account_ids) or any(
+            not account.is_active for account in accounts.values()
+        ):
+            raise AccountNotFoundError(
+                "Satu atau lebih akun tidak ditemukan, tidak aktif, atau di luar entitas."
+            )
 
         try:
             with transaction.atomic():
@@ -252,7 +266,9 @@ def close_period(period_id: UUID, *, maker_id: int, checker_id: int) -> Accounti
         )
     }
     if len(users) != 2:
-        raise AuthorizationError("Pembuat dan penyetuju harus pengguna aktif dengan hak administrasi keuangan.")
+        raise AuthorizationError(
+            "Pembuat dan penyetuju harus pengguna aktif dengan hak administrasi keuangan."
+        )
 
     with transaction.atomic():
         try:

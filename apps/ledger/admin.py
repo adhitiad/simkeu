@@ -4,7 +4,6 @@ from django.contrib import admin
 from django.contrib.auth.models import User
 from django.forms import ModelForm
 from django.http import HttpRequest
-from typing import cast
 
 from .models import Account, AccountingPeriod, JournalEntry, JournalLineRecord
 
@@ -57,7 +56,11 @@ class AccountingPeriodAdmin(admin.ModelAdmin):
             obj.created_by = User.objects.get(pk=request.user.pk)
         super().save_model(request, obj, form, change)
 
-    def has_delete_permission(self, request: HttpRequest, obj: AccountingPeriod | None = None) -> bool:
+    def has_delete_permission(
+        self,
+        request: HttpRequest,
+        obj: AccountingPeriod | None = None,
+    ) -> bool:
         return False
 
 

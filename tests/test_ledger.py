@@ -7,7 +7,13 @@ import pytest
 from django.contrib.auth.models import User
 from django.db import DatabaseError, transaction
 
-from apps.ledger.models import Account, AccountingPeriod, JournalEntry, JournalLineRecord, PeriodStatus
+from apps.ledger.models import (
+    Account,
+    AccountingPeriod,
+    JournalEntry,
+    JournalLineRecord,
+    PeriodStatus,
+)
 from apps.ledger.services import (
     DuplicateJournalError,
     InvalidJournalError,

@@ -9,7 +9,9 @@ class JournalLineInputSerializer(serializers.Serializer):
     account_id = serializers.UUIDField()
     debit = serializers.IntegerField(min_value=0)
     credit = serializers.IntegerField(min_value=0)
-    description = serializers.CharField(max_length=255, required=False, allow_blank=True, default="")
+    description = serializers.CharField(
+        max_length=255, required=False, allow_blank=True, default=""
+    )
 
     def validate_debit(self, value: int) -> int:
         raw = self.initial_data.get("debit")
@@ -29,7 +31,9 @@ class JournalCreateSerializer(serializers.Serializer):
     business_date = serializers.DateField()
     source_type = serializers.CharField(max_length=64)
     source_id = serializers.CharField(max_length=128)
-    description = serializers.CharField(max_length=500, required=False, allow_blank=True, default="")
+    description = serializers.CharField(
+        max_length=500, required=False, allow_blank=True, default=""
+    )
     lines = JournalLineInputSerializer(many=True, allow_empty=False)
 
     def validate_entity_id(self, value: int) -> int:

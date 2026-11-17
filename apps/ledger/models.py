@@ -53,7 +53,10 @@ class Account(models.Model):
         db_table = '"ledger"."accounts"'
         ordering: ClassVar[list[str]] = ["entity_id", "code"]
         constraints = [
-            models.UniqueConstraint(fields=["entity_id", "code"], name="ledger_account_entity_code_uniq"),
+            models.UniqueConstraint(
+                fields=["entity_id", "code"],
+                name="ledger_account_entity_code_uniq",
+            ),
             models.CheckConstraint(
                 condition=Q(account_type__in=[choice.value for choice in AccountType]),
                 name="ledger_account_type_valid",
@@ -66,7 +69,8 @@ class Account(models.Model):
 
     def clean(self) -> None:
         super().clean()
-        if self.parent_id and self.parent.entity_id != self.entity_id:
+        parent = self.parent
+        if parent is not None and parent.entity_id != self.entity_id:
             raise ValidationError({"parent": "Akun induk harus berasal dari entitas yang sama."})
 
     def __str__(self) -> str:
@@ -110,7 +114,10 @@ class AccountingPeriod(models.Model):
         db_table = '"ledger"."accounting_periods"'
         ordering: ClassVar[list[str]] = ["-starts_on"]
         constraints = [
-            models.UniqueConstraint(fields=["entity_id", "name"], name="ledger_period_entity_name_uniq"),
+            models.UniqueConstraint(
+                fields=["entity_id", "name"],
+                name="ledger_period_entity_name_uniq",
+            ),
             models.CheckConstraint(
                 condition=Q(ends_on__gte=F("starts_on")),
                 name="ledger_period_dates_valid",
@@ -121,7 +128,10 @@ class AccountingPeriod(models.Model):
             ),
         ]
         indexes = [
-            models.Index(fields=["entity_id", "status", "starts_on"], name="ledger_period_scope_idx"),
+            models.Index(
+                fields=["entity_id", "status", "starts_on"],
+                name="ledger_period_scope_idx",
+            ),
         ]
 
     def clean(self) -> None:
@@ -211,7 +221,10 @@ class JournalLineRecord(models.Model):
         db_table = '"ledger"."journal_lines"'
         ordering: ClassVar[list[str]] = ["line_number"]
         constraints = [
-            models.UniqueConstraint(fields=["entry", "line_number"], name="ledger_line_number_uniq"),
+            models.UniqueConstraint(
+                fields=["entry", "line_number"],
+                name="ledger_line_number_uniq",
+            ),
             models.CheckConstraint(
                 condition=Q(debit__gt=0, credit=0) | Q(debit=0, credit__gt=0),
                 name="ledger_line_one_sided_amount",
