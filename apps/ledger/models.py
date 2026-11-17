@@ -52,7 +52,7 @@ class Account(models.Model):
     class Meta:
         db_table = '"ledger"."accounts"'
         ordering: ClassVar[list[str]] = ["entity_id", "code"]
-        constraints = [
+        constraints: ClassVar[list[models.BaseConstraint]] = [
             models.UniqueConstraint(
                 fields=["entity_id", "code"],
                 name="ledger_account_entity_code_uniq",
@@ -67,14 +67,14 @@ class Account(models.Model):
             ),
         ]
 
+    def __str__(self) -> str:
+        return f"{self.code} — {self.name}"
+
     def clean(self) -> None:
         super().clean()
         parent = self.parent
         if parent is not None and parent.entity_id != self.entity_id:
             raise ValidationError({"parent": "Akun induk harus berasal dari entitas yang sama."})
-
-    def __str__(self) -> str:
-        return f"{self.code} — {self.name}"
 
 
 class AccountingPeriod(models.Model):
@@ -127,12 +127,15 @@ class AccountingPeriod(models.Model):
                 name="ledger_period_status_valid",
             ),
         ]
-        indexes = [
+        indexes: ClassVar[list[models.Index]] = [
             models.Index(
                 fields=["entity_id", "status", "starts_on"],
                 name="ledger_period_scope_idx",
             ),
         ]
+
+    def __str__(self) -> str:
+        return self.name
 
     def clean(self) -> None:
         super().clean()
@@ -148,9 +151,6 @@ class AccountingPeriod(models.Model):
                 overlapping = overlapping.exclude(pk=self.pk)
             if overlapping.exists():
                 raise ValidationError("Periode akuntansi tidak boleh saling tumpang tindih.")
-
-    def __str__(self) -> str:
-        return self.name
 
 
 class JournalEntry(models.Model):

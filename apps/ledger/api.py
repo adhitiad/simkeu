@@ -3,12 +3,12 @@ from __future__ import annotations
 import base64
 import binascii
 from datetime import date
-from typing import cast
+from typing import ClassVar, cast
 from uuid import UUID
 
 from django.db.models import Q
 from rest_framework import status
-from rest_framework.permissions import IsAdminUser
+from rest_framework.permissions import BasePermission, IsAdminUser
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -46,7 +46,7 @@ def _decode_cursor(value: str) -> tuple[date, UUID]:
 
 
 class JournalCollectionView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes: ClassVar[list[type[BasePermission]]] = [IsAdminUser]
 
     def get(self, request: Request) -> Response:
         raw_entity_id = request.query_params.get("entity_id")
@@ -65,7 +65,7 @@ class JournalCollectionView(APIView):
             )
         if entity_id <= 0 or not 1 <= limit <= 100:
             return Response(
-                {"detail": "entity_id harus positif dan limit berada pada rentang 1–100."},
+                {"detail": "entity_id harus positif dan limit berada pada rentang 1-100."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

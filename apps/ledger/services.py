@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date, datetime
-from typing import Sequence
 from uuid import UUID
 
 from django.contrib.auth.models import User

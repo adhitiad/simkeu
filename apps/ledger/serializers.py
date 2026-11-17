@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import ClassVar
+
 from rest_framework import serializers
 
 from .models import JournalEntry, JournalLineRecord
@@ -55,7 +57,7 @@ class JournalLineReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = JournalLineRecord
-        fields = [
+        fields: ClassVar[list[str]] = [
             "line_number",
             "account",
             "account_code",
@@ -64,7 +66,7 @@ class JournalLineReadSerializer(serializers.ModelSerializer):
             "debit",
             "credit",
         ]
-        read_only_fields = fields
+        read_only_fields: ClassVar[list[str]] = fields
 
 
 class JournalReadSerializer(serializers.ModelSerializer):

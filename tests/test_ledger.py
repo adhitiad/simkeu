@@ -119,9 +119,8 @@ def test_post_persists_balanced_immutable_journal() -> None:
     assert len(lines) == 2
     assert sum(line.debit for line in lines) == sum(line.credit for line in lines) == 100_000
 
-    with pytest.raises(DatabaseError):
-        with transaction.atomic():
-            JournalEntry.objects.filter(pk=entry.pk).update(description="diubah")
+    with pytest.raises(DatabaseError), transaction.atomic():
+        JournalEntry.objects.filter(pk=entry.pk).update(description="diubah")
 
 
 @pytest.mark.django_db
