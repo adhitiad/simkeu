@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import binascii
+from dataclasses import asdict
 from datetime import date
 from typing import ClassVar, cast
 from uuid import UUID
@@ -28,6 +29,7 @@ from .services import (
     PeriodNotFoundError,
     post,
 )
+from .reports import InvalidTrialBalanceRequest, build_trial_balance
 
 
 def _encode_cursor(entry: JournalEntry) -> str:
@@ -144,4 +146,42 @@ class JournalCollectionView(APIView):
         return Response(
             JournalReadSerializer(entry).data,
             status=status.HTTP_201_CREATED,
+        )
+
+
+class TrialBalanceView(APIView):
+    permission_classes: ClassVar[list[type[BasePermission]]] = [IsAdminUser]
+
+    def get(self, request: Request) -> Response:
+        raw_entity_id = request.query_params.get("entity_id")
+        raw_as_of = request.query_params.get("as_of")
+        if raw_entity_id is None or raw_as_of is None:
+            return Response(
+                {"detail": "Parameter entity_id dan as_of wajib diisi."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            entity_id = int(raw_entity_id)
+            as_of = date.fromisoformat(raw_as_of)
+            report = build_trial_balance(entity_id=entity_id, as_of=as_of)
+        except (ValueError, TypeError) as exc:
+            return Response(
+                {"detail": str(exc) or "Parameter laporan tidak valid."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except InvalidTrialBalanceRequest as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(
+            {
+                "entity_id": report.entity_id,
+                "as_of": report.as_of,
+                "accounts": [asdict(row) for row in report.accounts],
+                "total_debit_activity": report.total_debit_activity,
+                "total_credit_activity": report.total_credit_activity,
+                "total_closing_debit": report.total_closing_debit,
+                "total_closing_credit": report.total_closing_credit,
+                "is_balanced": report.is_balanced,
+            }
         )

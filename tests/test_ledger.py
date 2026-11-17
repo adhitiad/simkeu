@@ -25,6 +25,7 @@ from apps.ledger.services import (
     post,
     validate_journal,
 )
+from apps.ledger.reports import build_trial_balance
 
 
 def _journal(
@@ -221,3 +222,43 @@ def test_closed_period_cannot_be_reopened() -> None:
 
     with pytest.raises(DatabaseError), transaction.atomic():
         AccountingPeriod.objects.filter(pk=period.pk).update(status=PeriodStatus.OPEN)
+
+
+@pytest.mark.django_db
+def test_trial_balance_includes_all_accounts_and_balanced_closing_values() -> None:
+    actor, _, cash, receivable = _ledger_fixture()
+    Account.objects.create(
+        entity_id=10,
+        code="4101",
+        name="Pendapatan Pendidikan",
+        account_type="revenue",
+        normal_balance="credit",
+        created_by=actor,
+    )
+    post(_journal(cash.pk, receivable.pk), actor_id=actor.pk)
+
+    report = build_trial_balance(entity_id=10, as_of=date(2026, 11, 17))
+
+    assert report.is_balanced is True
+    assert report.total_debit_activity == 100_000
+    assert report.total_credit_activity == 100_000
+    assert report.total_closing_debit == 100_000
+    assert report.total_closing_credit == 100_000
+    assert len(report.accounts) == 3
+    unused_account = next(row for row in report.accounts if row.account_code == "4101")
+    assert unused_account.debit_activity == 0
+    assert unused_account.credit_activity == 0
+
+
+@pytest.mark.django_db
+def test_trial_balance_excludes_journals_after_as_of_date() -> None:
+    actor, _, cash, receivable = _ledger_fixture()
+    post(_journal(cash.pk, receivable.pk), actor_id=actor.pk)
+
+    report = build_trial_balance(entity_id=10, as_of=date(2026, 11, 16))
+
+    assert report.is_balanced is True
+    assert report.total_debit_activity == 0
+    assert report.total_credit_activity == 0
+    assert report.total_closing_debit == 0
+    assert report.total_closing_credit == 0
