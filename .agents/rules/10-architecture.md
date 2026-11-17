@@ -27,7 +27,12 @@ alwaysApply: false
 
 ## Multi-entity
 
-- Semua tabel keuangan membawa `entity_id` (yayasan/universitas). COA per entity. Konsolidasi dilakukan di layer pelaporan, bukan dengan menggabungkan data di tabel transaksi.
+- Pisahkan LegalEntity (badan hukum penyelenggara/pelapor), Institution (PTS), dan OrganizationUnit (fakultas, prodi, biro, unit, kampus/cost center).
+- entity_id pada ledger bermakna ID LegalEntity, bukan ID universitas, fakultas, kampus, atau cost center. Nama field boleh tetap entity_id untuk kompatibilitas, tetapi kontrak domain dan FK target harus tegas.
+- Setiap legal entity mempunyai COA, tahun buku, periode, kebijakan akuntansi, rekening, dan buku besar sendiri. Unit organisasi menjadi dimensi pada dokumen dan baris jurnal.
+- Bila satu badan hukum menyelenggarakan lebih dari satu PTS, reporting manajemen dapat dipisah per institution_id; laporan badan hukum menggabungkan unit dalam badan hukum tersebut.
+- Bila ada badan hukum berbeda, buku besar tetap terpisah. Konsolidasi dilakukan di reporting layer dengan eliminasi transaksi antar-entitas.
+- Baca docs/architecture/pts-governance-and-operating-model.md sebelum mengubah model organisasi/otorisasi PTS.
 
 ## Skalabilitas dan memori
 
