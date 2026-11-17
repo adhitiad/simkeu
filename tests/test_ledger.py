@@ -13,6 +13,7 @@ from apps.ledger.services import (
     InvalidJournalError,
     Journal,
     JournalLine,
+    MakerCheckerError,
     PeriodClosedError,
     close_period,
     post,
@@ -158,7 +159,7 @@ def test_period_close_requires_two_distinct_staff_users() -> None:
         is_staff=True,
     )
 
-    with pytest.raises(Exception):
+    with pytest.raises(MakerCheckerError):
         close_period(period.pk, maker_id=maker.pk, checker_id=maker.pk)
 
     closed = close_period(period.pk, maker_id=maker.pk, checker_id=checker.pk)

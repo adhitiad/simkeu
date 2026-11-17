@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 from django.contrib import admin
+from django.contrib.auth.models import User
+from django.forms import ModelForm
 from django.http import HttpRequest
+from typing import cast
 
 from .models import Account, AccountingPeriod, JournalEntry, JournalLineRecord
 
@@ -18,11 +21,11 @@ class AccountAdmin(admin.ModelAdmin):
         self,
         request: HttpRequest,
         obj: Account,
-        form: object,
+        form: ModelForm[Account],
         change: bool,
     ) -> None:
         if not change:
-            obj.created_by = request.user
+            obj.created_by = User.objects.get(pk=request.user.pk)
         super().save_model(request, obj, form, change)
 
     def has_delete_permission(self, request: HttpRequest, obj: Account | None = None) -> bool:
@@ -47,11 +50,11 @@ class AccountingPeriodAdmin(admin.ModelAdmin):
         self,
         request: HttpRequest,
         obj: AccountingPeriod,
-        form: object,
+        form: ModelForm[AccountingPeriod],
         change: bool,
     ) -> None:
         if not change:
-            obj.created_by = request.user
+            obj.created_by = User.objects.get(pk=request.user.pk)
         super().save_model(request, obj, form, change)
 
     def has_delete_permission(self, request: HttpRequest, obj: AccountingPeriod | None = None) -> bool:
@@ -94,6 +97,13 @@ class JournalEntryAdmin(admin.ModelAdmin):
 
     def has_add_permission(self, request: HttpRequest) -> bool:
         return False
+
+    def has_view_permission(
+        self,
+        request: HttpRequest,
+        obj: JournalEntry | None = None,
+    ) -> bool:
+        return request.user.is_staff
 
     def has_change_permission(
         self,

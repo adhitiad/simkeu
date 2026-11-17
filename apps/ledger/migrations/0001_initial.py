@@ -47,7 +47,8 @@ BEGIN
     SELECT entity_id, starts_on, ends_on, status
       INTO period_entity, period_start, period_end, period_status
       FROM ledger.accounting_periods
-     WHERE id = NEW.period_id;
+     WHERE id = NEW.period_id
+     FOR UPDATE;
 
     IF NOT FOUND THEN
         RAISE EXCEPTION 'accounting period does not exist';
@@ -81,14 +82,16 @@ DECLARE
 BEGIN
     SELECT entity_id INTO entry_entity
       FROM ledger.journal_entries
-     WHERE id = NEW.entry_id;
+     WHERE id = NEW.entry_id
+     FOR UPDATE;
     IF NOT FOUND OR entry_entity <> NEW.entity_id THEN
         RAISE EXCEPTION 'journal line entity does not match journal entry';
     END IF;
 
     SELECT entity_id, is_active INTO account_entity, account_active
       FROM ledger.accounts
-     WHERE id = NEW.account_id;
+     WHERE id = NEW.account_id
+     FOR UPDATE;
     IF NOT FOUND OR account_entity <> NEW.entity_id OR account_active IS NOT TRUE THEN
         RAISE EXCEPTION 'journal line account is missing, inactive, or outside entity';
     END IF;

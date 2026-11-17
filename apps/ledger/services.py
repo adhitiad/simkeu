@@ -70,16 +70,24 @@ class Journal:
 
 def validate_journal(journal: Journal) -> None:
     """Validate a journal without performing database I/O."""
-    if isinstance(journal.entity_id, bool) or journal.entity_id <= 0:
+    if (
+        not isinstance(journal.entity_id, int)
+        or isinstance(journal.entity_id, bool)
+        or journal.entity_id <= 0
+    ):
         raise InvalidJournalError("entity_id harus berupa bilangan bulat positif.")
     if not isinstance(journal.business_date, date) or isinstance(journal.business_date, datetime):
         raise InvalidJournalError("business_date harus berupa tanggal tanpa komponen waktu.")
-    if not journal.source_type or len(journal.source_type) > 64:
-        raise InvalidJournalError("source_type wajib diisi dan maksimal 64 karakter.")
-    if not journal.source_id or len(journal.source_id) > 128:
-        raise InvalidJournalError("source_id wajib diisi dan maksimal 128 karakter.")
-    if len(journal.description) > 500:
-        raise InvalidJournalError("description maksimal 500 karakter.")
+    if not isinstance(journal.source_type, str) or not journal.source_type.strip():
+        raise InvalidJournalError("source_type wajib diisi.")
+    if len(journal.source_type) > 64:
+        raise InvalidJournalError("source_type maksimal 64 karakter.")
+    if not isinstance(journal.source_id, str) or not journal.source_id.strip():
+        raise InvalidJournalError("source_id wajib diisi.")
+    if len(journal.source_id) > 128:
+        raise InvalidJournalError("source_id maksimal 128 karakter.")
+    if not isinstance(journal.description, str) or len(journal.description) > 500:
+        raise InvalidJournalError("description harus berupa teks maksimal 500 karakter.")
     if len(journal.lines) < 2:
         raise InvalidJournalError("Jurnal minimal memiliki dua baris.")
 
@@ -96,8 +104,8 @@ def validate_journal(journal: Journal) -> None:
             raise InvalidJournalError("Nominal debit/kredit tidak boleh negatif.")
         if (line.debit > 0) == (line.credit > 0):
             raise InvalidJournalError("Setiap baris harus berisi debit atau kredit, bukan keduanya.")
-        if len(line.description) > 255:
-            raise InvalidJournalError("Deskripsi baris maksimal 255 karakter.")
+        if not isinstance(line.description, str) or len(line.description) > 255:
+            raise InvalidJournalError("Deskripsi baris harus berupa teks maksimal 255 karakter.")
         debit_total += line.debit
         credit_total += line.credit
 
