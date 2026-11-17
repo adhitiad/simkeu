@@ -171,3 +171,51 @@ def test_period_close_requires_two_distinct_staff_users() -> None:
     assert closed.status == PeriodStatus.CLOSED
     assert closed.close_requested_by_id == maker.pk
     assert closed.closed_by_id == checker.pk
+
+
+@pytest.mark.django_db
+def test_account_classification_is_immutable_after_ledger_usage() -> None:
+    actor, _, cash, receivable = _ledger_fixture()
+    post(_journal(cash.pk, receivable.pk), actor_id=actor.pk)
+
+    with pytest.raises(DatabaseError), transaction.atomic():
+        Account.objects.filter(pk=cash.pk).update(account_type="revenue")
+
+
+@pytest.mark.django_db
+def test_account_period_dates_are_immutable_after_journal_posting() -> None:
+    actor, period, cash, receivable = _ledger_fixture()
+    post(_journal(cash.pk, receivable.pk), actor_id=actor.pk)
+
+    with pytest.raises(DatabaseError), transaction.atomic():
+        AccountingPeriod.objects.filter(pk=period.pk).update(
+            ends_on=date(2026, 12, 31)
+        )
+
+
+@pytest.mark.django_db
+def test_overlapping_accounting_periods_are_rejected_by_database() -> None:
+    actor, _, _, _ = _ledger_fixture()
+
+    with pytest.raises(DatabaseError), transaction.atomic():
+        AccountingPeriod.objects.create(
+            entity_id=10,
+            name="November overlap",
+            starts_on=date(2026, 11, 15),
+            ends_on=date(2026, 12, 15),
+            created_by=actor,
+        )
+
+
+@pytest.mark.django_db
+def test_closed_period_cannot_be_reopened() -> None:
+    maker, period, _, _ = _ledger_fixture()
+    checker = User.objects.create_user(
+        username=f"checker-{uuid4().hex[:10]}",
+        password="test-password-only",
+        is_staff=True,
+    )
+    close_period(period.pk, maker_id=maker.pk, checker_id=checker.pk)
+
+    with pytest.raises(DatabaseError), transaction.atomic():
+        AccountingPeriod.objects.filter(pk=period.pk).update(status=PeriodStatus.OPEN)
