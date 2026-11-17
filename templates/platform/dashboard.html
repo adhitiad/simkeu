@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Dasbor — SIMKEU{% endblock %}
+{% block content %}
+<h1>Dasbor Keuangan</h1>
+{% if entity %}
+<p>Entitas: <strong>{{ entity.name }}</strong> · Peran: {{ roles|join:", " }}</p>
+<form method="get" class="card">
+  <label for="entity">Entitas</label>
+  <select id="entity" name="entity" onchange="this.form.submit()">
+    {% for item in entities %}
+    <option value="{{ item.pk }}" {% if item.pk == entity.pk %}selected{% endif %}>{{ item.name }}</option>
+    {% endfor %}
+  </select>
+</form>
+<div class="grid">
+  <div class="card"><h2>Jurnal</h2><p>{{ journal_count }} jurnal tercatat.</p></div>
+  <div class="card"><h2>Unit</h2><p>{{ unit_count }} unit aktif.</p></div>
+  <div class="card"><h2>Audit</h2><p>{{ audit_count }} peristiwa tercatat.</p></div>
+  <div class="card"><h2>Outbox</h2><p>{{ outbox_pending }} event menunggu publikasi.</p></div>
+</div>
+{% else %}
+<p>Belum ada entitas yang dapat diakses.</p>
+{% endif %}
+{% endblock %}

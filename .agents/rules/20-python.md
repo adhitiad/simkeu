@@ -50,6 +50,7 @@ alwaysApply: false
 ```python
 from django.db import transaction
 
+
 def allocate(self, req: AllocateRequest) -> None:
     with transaction.atomic():
         account = Account.objects.select_for_update().get(id=req.account_id)

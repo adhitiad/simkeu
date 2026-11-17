@@ -4,7 +4,7 @@ import base64
 import binascii
 from dataclasses import asdict
 from datetime import date
-from typing import ClassVar, cast
+from typing import cast
 from uuid import UUID
 
 from django.db.models import Q
@@ -48,7 +48,7 @@ def _decode_cursor(value: str) -> tuple[date, UUID]:
 
 
 class JournalCollectionView(APIView):
-    permission_classes: ClassVar[list[type[BasePermission]]] = [IsAdminUser]
+    permission_classes: tuple[type[BasePermission], ...] = (IsAdminUser,)
 
     def get(self, request: Request) -> Response:
         raw_entity_id = request.query_params.get("entity_id")
@@ -150,7 +150,7 @@ class JournalCollectionView(APIView):
 
 
 class TrialBalanceView(APIView):
-    permission_classes: ClassVar[list[type[BasePermission]]] = [IsAdminUser]
+    permission_classes: tuple[type[BasePermission], ...] = (IsAdminUser,)
 
     def get(self, request: Request) -> Response:
         raw_entity_id = request.query_params.get("entity_id")

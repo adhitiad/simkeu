@@ -1,13 +1,22 @@
 from __future__ import annotations
 
-from typing import ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from rest_framework import serializers
 
 from .models import JournalEntry, JournalLineRecord
 
+if TYPE_CHECKING:
+    SerializerBase = serializers.Serializer[Any]
+    LineSerializerBase = serializers.ModelSerializer[JournalLineRecord]
+    EntrySerializerBase = serializers.ModelSerializer[JournalEntry]
+else:
+    SerializerBase = serializers.Serializer
+    LineSerializerBase = serializers.ModelSerializer
+    EntrySerializerBase = serializers.ModelSerializer
 
-class JournalLineInputSerializer(serializers.Serializer):
+
+class JournalLineInputSerializer(SerializerBase):
     account_id = serializers.UUIDField()
     debit = serializers.IntegerField(min_value=0)
     credit = serializers.IntegerField(min_value=0)
@@ -28,7 +37,7 @@ class JournalLineInputSerializer(serializers.Serializer):
         return value
 
 
-class JournalCreateSerializer(serializers.Serializer):
+class JournalCreateSerializer(SerializerBase):
     entity_id = serializers.IntegerField(min_value=1)
     business_date = serializers.DateField()
     source_type = serializers.CharField(max_length=64)
@@ -51,7 +60,7 @@ class JournalCreateSerializer(serializers.Serializer):
         return attrs
 
 
-class JournalLineReadSerializer(serializers.ModelSerializer):
+class JournalLineReadSerializer(LineSerializerBase):
     account_code = serializers.CharField(source="account.code", read_only=True)
     account_name = serializers.CharField(source="account.name", read_only=True)
 
@@ -69,7 +78,7 @@ class JournalLineReadSerializer(serializers.ModelSerializer):
         read_only_fields: ClassVar[list[str]] = fields
 
 
-class JournalReadSerializer(serializers.ModelSerializer):
+class JournalReadSerializer(EntrySerializerBase):
     period_name = serializers.CharField(source="period.name", read_only=True)
     created_by_id = serializers.IntegerField(read_only=True)
     lines = JournalLineReadSerializer(many=True, read_only=True)

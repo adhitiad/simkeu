@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import ClassVar
+from typing import TYPE_CHECKING, cast
 
 from django.contrib import admin
 from django.contrib.auth.models import User
@@ -9,21 +9,25 @@ from django.http import HttpRequest
 
 from .models import Account, AccountingPeriod, JournalEntry, JournalLineRecord
 
+if TYPE_CHECKING:
+    AccountAdminBase = admin.ModelAdmin[Account]
+    PeriodAdminBase = admin.ModelAdmin[AccountingPeriod]
+    JournalAdminBase = admin.ModelAdmin[JournalEntry]
+    JournalLineInlineBase = admin.TabularInline[JournalLineRecord, JournalEntry]
+else:
+    AccountAdminBase = admin.ModelAdmin
+    PeriodAdminBase = admin.ModelAdmin
+    JournalAdminBase = admin.ModelAdmin
+    JournalLineInlineBase = admin.TabularInline
+
 
 @admin.register(Account)
-class AccountAdmin(admin.ModelAdmin):
-    list_display: ClassVar[list[str]] = [
-        "code",
-        "name",
-        "entity_id",
-        "account_type",
-        "normal_balance",
-        "is_active",
-    ]
-    list_filter: ClassVar[list[str]] = ["entity_id", "account_type", "normal_balance", "is_active"]
-    search_fields: ClassVar[list[str]] = ["code", "name"]
-    readonly_fields: ClassVar[list[str]] = ["created_at", "created_by"]
-    ordering: ClassVar[list[str]] = ["entity_id", "code"]
+class AccountAdmin(AccountAdminBase):
+    list_display = ("code", "name", "entity_id", "account_type", "normal_balance", "is_active")
+    list_filter = ("entity_id", "account_type", "normal_balance", "is_active")
+    search_fields = ("code", "name")
+    readonly_fields = ("created_at", "created_by")
+    ordering = ("entity_id", "code")
 
     def save_model(
         self,
@@ -33,7 +37,7 @@ class AccountAdmin(admin.ModelAdmin):
         change: bool,
     ) -> None:
         if not change:
-            obj.created_by = User.objects.get(pk=request.user.pk)
+            obj.created_by = cast(User, request.user)
         super().save_model(request, obj, form, change)
 
     def has_delete_permission(self, request: HttpRequest, obj: Account | None = None) -> bool:
@@ -41,25 +45,18 @@ class AccountAdmin(admin.ModelAdmin):
 
 
 @admin.register(AccountingPeriod)
-class AccountingPeriodAdmin(admin.ModelAdmin):
-    list_display: ClassVar[list[str]] = [
-        "name",
-        "entity_id",
-        "starts_on",
-        "ends_on",
-        "status",
-        "closed_at",
-    ]
-    list_filter: ClassVar[list[str]] = ["entity_id", "status"]
-    search_fields: ClassVar[list[str]] = ["name"]
-    readonly_fields: ClassVar[list[str]] = [
+class AccountingPeriodAdmin(PeriodAdminBase):
+    list_display = ("name", "entity_id", "starts_on", "ends_on", "status", "closed_at")
+    list_filter = ("entity_id", "status")
+    search_fields = ("name",)
+    readonly_fields = (
         "status",
         "close_requested_by",
         "closed_by",
         "closed_at",
         "created_at",
         "created_by",
-    ]
+    )
 
     def save_model(
         self,
@@ -69,7 +66,7 @@ class AccountingPeriodAdmin(admin.ModelAdmin):
         change: bool,
     ) -> None:
         if not change:
-            obj.created_by = User.objects.get(pk=request.user.pk)
+            obj.created_by = cast(User, request.user)
         super().save_model(request, obj, form, change)
 
     def has_delete_permission(
@@ -80,11 +77,11 @@ class AccountingPeriodAdmin(admin.ModelAdmin):
         return False
 
 
-class JournalLineInline(admin.TabularInline):
+class JournalLineInline(JournalLineInlineBase):
     model = JournalLineRecord
     extra = 0
     can_delete = False
-    readonly_fields: ClassVar[list[str]] = [
+    readonly_fields = (
         "entity_id",
         "account",
         "line_number",
@@ -93,22 +90,15 @@ class JournalLineInline(admin.TabularInline):
         "credit",
         "created_at",
         "created_by",
-    ]
+    )
 
 
 @admin.register(JournalEntry)
-class JournalEntryAdmin(admin.ModelAdmin):
-    list_display: ClassVar[list[str]] = [
-        "business_date",
-        "entity_id",
-        "source_type",
-        "source_id",
-        "period",
-        "posted_at",
-    ]
-    list_filter: ClassVar[list[str]] = ["entity_id", "period"]
-    search_fields: ClassVar[list[str]] = ["source_type", "source_id", "description"]
-    readonly_fields: ClassVar[list[str]] = [
+class JournalEntryAdmin(JournalAdminBase):
+    list_display = ("business_date", "entity_id", "source_type", "source_id", "period", "posted_at")
+    list_filter = ("entity_id", "period")
+    search_fields = ("source_type", "source_id", "description")
+    readonly_fields = (
         "entity_id",
         "period",
         "business_date",
@@ -118,8 +108,8 @@ class JournalEntryAdmin(admin.ModelAdmin):
         "posted_at",
         "created_at",
         "created_by",
-    ]
-    inlines: ClassVar[list[type[admin.TabularInline]]] = [JournalLineInline]
+    )
+    inlines = (JournalLineInline,)
 
     def has_add_permission(self, request: HttpRequest) -> bool:
         return False

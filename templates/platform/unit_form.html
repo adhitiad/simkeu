@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Tambah Unit — SIMKEU{% endblock %}
+{% block content %}
+<h1>Tambah Unit Organisasi</h1>
+{% for message in messages %}<p>{{ message }}</p>{% endfor %}
+<form method="post" class="card">
+  {% csrf_token %}
+  <input type="hidden" name="entity" value="{{ entity.pk }}">
+  <p><label>Kode <input name="code" maxlength="32" required></label></p>
+  <p><label>Nama <input name="name" maxlength="160" required></label></p>
+  <p><label>Jenis <select name="unit_type">{% for value, label in unit_types %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label></p>
+  <p><label>Induk <select name="parent"><option value="">—</option>{% for parent in parents %}<option value="{{ parent.pk }}">{{ parent.name }}</option>{% endfor %}</select></label></p>
+  <button type="submit">Simpan</button>
+</form>
+{% endblock %}
