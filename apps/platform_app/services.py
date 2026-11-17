@@ -357,24 +357,6 @@ def assign_role(
     request_id: str = "",
     ip_address: str | None = None,
 ) -> UserRole:
-    has_grant = has_permission(
-        actor,
-        "iam.role.assign",
-        entity_id=entity.pk,
-        institution_id=institution.pk if institution else None,
-        unit_id=unit.pk if unit else None,
-    )
-    first_assignment = (
-        actor.is_staff
-        and not UserRole.objects.filter(
-            entity=entity,
-            is_active=True,
-        ).exists()
-    )
-    if not has_grant and not first_assignment:
-        raise IamPermissionDenied(
-            f"Pengguna tidak memiliki izin iam.role.assign pada entitas {entity.pk}."
-        )
     if not role.is_active or not entity.is_active:
         raise IamValidationError("Role dan badan hukum harus aktif.")
 
@@ -396,6 +378,26 @@ def assign_role(
     selected_scope = scope_level or inferred_scope
     if selected_scope != inferred_scope:
         raise IamValidationError("Level scope tidak sesuai dengan badan hukum/institusi/unit.")
+
+    # Validate the requested target scope before checking the grantor. This
+    # keeps malformed cross-entity input a validation failure, not an IAM grant.
+    has_grant = has_permission(
+        actor,
+        "iam.role.assign",
+        entity_id=entity.pk,
+        institution_id=institution.pk if institution else None,
+        unit_id=unit.pk if unit else None,
+    )
+    first_assignment = (
+        actor.is_staff
+        and actor.pk == user.pk
+        and role.code == Role.RECTOR
+        and not UserRole.objects.filter(entity=entity).exists()
+    )
+    if not has_grant and not first_assignment:
+        raise IamPermissionDenied(
+            f"Pengguna tidak memiliki izin iam.role.assign pada entitas {entity.pk}."
+        )
 
     today = timezone.localdate()
     lookup = {

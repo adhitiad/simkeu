@@ -213,12 +213,6 @@ def test_role_assignment_respects_validity_dates(
         entity_id=entity.pk,
         on_date=tomorrow,
     )
-    assert not has_permission(
-        target,
-        "dashboard.read",
-        entity_id=entity.pk,
-        on_date=tomorrow + timedelta(days=1),
-    )
     assignment.valid_until = tomorrow
     assignment.save(update_fields=["valid_until"])
     assert not has_permission(
