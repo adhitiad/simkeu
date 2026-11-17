@@ -187,7 +187,12 @@ class OrganizationalUnit(models.Model):
 
     def clean(self) -> None:
         super().clean()
-        if self.institution_id and self.institution.entity_id != self.entity_id:
+        institution = self.institution
+        if (
+            self.institution_id is not None
+            and institution is not None
+            and institution.entity_id != self.entity_id
+        ):
             raise ValidationError(
                 {"institution": "Institusi harus berada pada badan hukum yang sama."}
             )
@@ -288,11 +293,19 @@ class PositionAssignment(models.Model):
 
     def clean(self) -> None:
         super().clean()
-        if self.institution_id and self.institution.entity_id != self.entity_id:
+        institution = self.institution
+        if (
+            self.institution_id is not None
+            and institution is not None
+            and institution.entity_id != self.entity_id
+        ):
             raise ValidationError({"institution": "Institusi tidak sesuai dengan badan hukum."})
         if self.unit_id:
             unit = self.unit
-            if unit.entity_id != self.entity_id or unit.institution_id != self.institution_id:
+            if (
+                unit is not None
+                and (unit.entity_id != self.entity_id or unit.institution_id != self.institution_id)
+            ):
                 raise ValidationError({"unit": "Unit tidak sesuai dengan badan hukum/institusi."})
 
 
@@ -436,11 +449,19 @@ class UserRole(models.Model):
             raise ValidationError(
                 {"valid_until": "Tanggal akhir tidak boleh sebelum tanggal mulai."}
             )
-        if self.institution_id and self.institution.entity_id != self.entity_id:
+        institution = self.institution
+        if (
+            self.institution_id is not None
+            and institution is not None
+            and institution.entity_id != self.entity_id
+        ):
             raise ValidationError({"institution": "Institusi harus berada pada entitas yang sama."})
         if self.unit_id:
             unit = self.unit
-            if unit.entity_id != self.entity_id or unit.institution_id != self.institution_id:
+            if (
+                unit is not None
+                and (unit.entity_id != self.entity_id or unit.institution_id != self.institution_id)
+            ):
                 raise ValidationError(
                     {"unit": "Unit harus berada pada entitas dan institusi yang sama."}
                 )

@@ -8,7 +8,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 env = environ.Env(
     DEBUG=(bool, False),
-    ALLOWED_HOSTS=(list, []),
+    ALLOWED_HOSTS=(list, ["localhost", "127.0.0.1", "[::1]"]),
     DATABASE_URL=(str, "postgres://simkeu:simkeu@localhost:5432/simkeu"),
 )
 
