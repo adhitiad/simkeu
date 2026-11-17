@@ -17,18 +17,27 @@
   <button type="submit">Berikan peran</button>
 </form>
 <table class="card">
-  <thead><tr><th>Pengguna</th><th>Peran</th><th>Scope</th><th>Status</th><th>Berlaku</th></tr></thead>
+  <thead><tr><th>Pengguna</th><th>Peran</th><th>Scope</th><th>Status</th><th>Berlaku</th><th>Aksi</th></tr></thead>
   <tbody>
     {% for item in assignments %}
     <tr>
       <td>{{ item.user.username }}</td>
       <td>{{ item.role.name }}</td>
       <td>{% if item.unit %}{{ item.unit }}{% elif item.institution %}{{ item.institution }}{% else %}Badan hukum{% endif %}</td>
-      <td>{% if item.is_active %}Aktif{% else %}Nonaktif{% endif %}</td>
+      <td>{% if item.is_active and not item.revoked_at %}Aktif{% else %}Nonaktif{% endif %}</td>
       <td>{{ item.valid_from }} — {{ item.valid_until|default:"Tidak terbatas" }}</td>
+      <td>
+        {% if item.is_active and not item.revoked_at %}
+        <form method="post" action="{% url 'role_revoke' item.pk %}">
+          {% csrf_token %}
+          <input type="text" name="reason" maxlength="1000" placeholder="Alasan pencabutan" required>
+          <button type="submit">Cabut</button>
+        </form>
+        {% else %}—{% endif %}
+      </td>
     </tr>
     {% empty %}
-    <tr><td colspan="5">Belum ada penugasan.</td></tr>
+    <tr><td colspan="6">Belum ada penugasan.</td></tr>
     {% endfor %}
   </tbody>
 </table>

@@ -27,6 +27,7 @@ from apps.platform_app.services import (
     has_permission_any_entity,
     record_audit,
     require_permission,
+    revoke_role,
     role_codes,
     visible_unit_ids,
 )
@@ -359,4 +360,26 @@ def role_assign(request: HttpRequest) -> HttpResponse:
         messages.error(request, f"Penugasan gagal: {exc}")
     else:
         messages.success(request, "Peran berhasil diberikan.")
+    return redirect("role_assignment_list")
+
+
+def role_revoke(request: HttpRequest, assignment_id: int) -> HttpResponse:
+    if not request.user.is_authenticated:
+        return redirect("login")
+    if request.method != "POST":
+        return _forbidden(request)
+    try:
+        assignment = UserRole.objects.get(pk=assignment_id)
+        request_id, ip_address = _request_context(request)
+        revoke_role(
+            actor=request.user,
+            assignment=assignment,
+            reason=request.POST.get("reason", "").strip()[:1000],
+            request_id=request_id,
+            ip_address=ip_address,
+        )
+    except (UserRole.DoesNotExist, IamError) as exc:
+        messages.error(request, f"Pencabutan peran gagal: {exc}")
+    else:
+        messages.success(request, "Penugasan peran berhasil dicabut.")
     return redirect("role_assignment_list")
