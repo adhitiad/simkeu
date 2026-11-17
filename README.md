@@ -84,3 +84,13 @@ Default konfigurasi membaca .env/.env, lalu overlay .env/.env.local. Untuk stagi
 - templates/: template server-rendered.
 
 Endpoint operasional: /healthz, /readyz, /metrics, /api/docs.
+
+## Arsitektur dan tata kelola PTS
+
+Dokumen rancangan:
+- docs/architecture/pts-governance-and-operating-model.md
+- docs/workflows/pts-financial-workflows.md
+- docs/reporting/pts-financial-report-templates.md
+- docs/ai/openrouter-financial-assistant.md
+
+Pemisahan penting: entity_id ledger adalah badan hukum pelapor; universitas, fakultas, biro, program studi, dan unit menjadi dimensi organisasi/cost center. Persetujuan final mengikuti Statuta, AD/ART, SOP keuangan, dan delegasi tertulis.
