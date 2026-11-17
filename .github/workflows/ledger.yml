@@ -57,6 +57,6 @@ jobs:
       - name: Ruff
         run: uv run ruff check apps/ledger tests/test_ledger.py simkeu/urls.py
       - name: Ruff format
-        run: uv run ruff format --check apps/ledger tests/test_ledger.py simkeu/urls.py
+        run: uv run ruff format --check --diff apps/ledger tests/test_ledger.py simkeu/urls.py
       - name: Tests
         run: uv run pytest -q
