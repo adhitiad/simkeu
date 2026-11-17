@@ -76,7 +76,7 @@ class JournalReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = JournalEntry
-        fields = [
+        fields: ClassVar[list[str]] = [
             "id",
             "entity_id",
             "period",

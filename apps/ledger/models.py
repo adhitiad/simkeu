@@ -113,7 +113,7 @@ class AccountingPeriod(models.Model):
     class Meta:
         db_table = '"ledger"."accounting_periods"'
         ordering: ClassVar[list[str]] = ["-starts_on"]
-        constraints = [
+        constraints: ClassVar[list[models.BaseConstraint]] = [
             models.UniqueConstraint(
                 fields=["entity_id", "name"],
                 name="ledger_period_entity_name_uniq",
@@ -176,13 +176,13 @@ class JournalEntry(models.Model):
     class Meta:
         db_table = '"ledger"."journal_entries"'
         ordering: ClassVar[list[str]] = ["-business_date", "-id"]
-        constraints = [
+        constraints: ClassVar[list[models.BaseConstraint]] = [
             models.UniqueConstraint(
                 fields=["entity_id", "source_type", "source_id"],
                 name="ledger_journal_source_uniq",
             ),
         ]
-        indexes = [
+        indexes: ClassVar[list[models.Index]] = [
             models.Index(
                 fields=["entity_id", "business_date", "id"],
                 name="ledger_jrnl_ent_date_idx",
@@ -220,7 +220,7 @@ class JournalLineRecord(models.Model):
     class Meta:
         db_table = '"ledger"."journal_lines"'
         ordering: ClassVar[list[str]] = ["line_number"]
-        constraints = [
+        constraints: ClassVar[list[models.BaseConstraint]] = [
             models.UniqueConstraint(
                 fields=["entry", "line_number"],
                 name="ledger_line_number_uniq",
@@ -230,7 +230,7 @@ class JournalLineRecord(models.Model):
                 name="ledger_line_one_sided_amount",
             ),
         ]
-        indexes = [
+        indexes: ClassVar[list[models.Index]] = [
             models.Index(fields=["entity_id", "entry"], name="ledger_line_ent_entry_idx"),
         ]
 

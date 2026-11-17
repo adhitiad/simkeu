@@ -12,8 +12,12 @@ from .models import Account, AccountingPeriod, JournalEntry, JournalLineRecord
 
 @admin.register(Account)
 class AccountAdmin(admin.ModelAdmin):
-    list_display: ClassVar[list[str]] = ["code", "name", "entity_id", "account_type", "normal_balance", "is_active"]
-    list_filter: ClassVar[list[str]] = ["entity_id", "account_type", "normal_balance", "is_active"]
+    list_display: ClassVar[list[str]] = [
+        "code", "name", "entity_id", "account_type", "normal_balance", "is_active"
+    ]
+    list_filter: ClassVar[list[str]] = [
+        "entity_id", "account_type", "normal_balance", "is_active"
+    ]
     search_fields: ClassVar[list[str]] = ["code", "name"]
     readonly_fields: ClassVar[list[str]] = ["created_at", "created_by"]
     ordering: ClassVar[list[str]] = ["entity_id", "code"]
@@ -35,7 +39,9 @@ class AccountAdmin(admin.ModelAdmin):
 
 @admin.register(AccountingPeriod)
 class AccountingPeriodAdmin(admin.ModelAdmin):
-    list_display: ClassVar[list[str]] = ["name", "entity_id", "starts_on", "ends_on", "status", "closed_at"]
+    list_display: ClassVar[list[str]] = [
+        "name", "entity_id", "starts_on", "ends_on", "status", "closed_at"
+    ]
     list_filter: ClassVar[list[str]] = ["entity_id", "status"]
     search_fields: ClassVar[list[str]] = ["name"]
     readonly_fields: ClassVar[list[str]] = [
@@ -84,9 +90,13 @@ class JournalLineInline(admin.TabularInline):
 
 @admin.register(JournalEntry)
 class JournalEntryAdmin(admin.ModelAdmin):
-    list_display: ClassVar[list[str]] = ["business_date", "entity_id", "source_type", "source_id", "period", "posted_at"]
+    list_display: ClassVar[list[str]] = [
+        "business_date", "entity_id", "source_type", "source_id", "period", "posted_at"
+    ]
     list_filter: ClassVar[list[str]] = ["entity_id", "period"]
-    search_fields: ClassVar[list[str]] = ["source_type", "source_id", "description"]
+    search_fields: ClassVar[list[str]] = [
+        "source_type", "source_id", "description"
+    ]
     readonly_fields: ClassVar[list[str]] = [
         "entity_id",
         "period",
