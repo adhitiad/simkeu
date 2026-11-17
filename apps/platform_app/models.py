@@ -302,9 +302,8 @@ class PositionAssignment(models.Model):
             raise ValidationError({"institution": "Institusi tidak sesuai dengan badan hukum."})
         if self.unit_id:
             unit = self.unit
-            if (
-                unit is not None
-                and (unit.entity_id != self.entity_id or unit.institution_id != self.institution_id)
+            if unit is not None and (
+                unit.entity_id != self.entity_id or unit.institution_id != self.institution_id
             ):
                 raise ValidationError({"unit": "Unit tidak sesuai dengan badan hukum/institusi."})
 
@@ -458,9 +457,8 @@ class UserRole(models.Model):
             raise ValidationError({"institution": "Institusi harus berada pada entitas yang sama."})
         if self.unit_id:
             unit = self.unit
-            if (
-                unit is not None
-                and (unit.entity_id != self.entity_id or unit.institution_id != self.institution_id)
+            if unit is not None and (
+                unit.entity_id != self.entity_id or unit.institution_id != self.institution_id
             ):
                 raise ValidationError(
                     {"unit": "Unit harus berada pada entitas dan institusi yang sama."}

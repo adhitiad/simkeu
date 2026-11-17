@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Pagu Anggaran — SIMKEU{% endblock %}
+{% block content %}
+<div class="mb-6 flex flex-wrap items-center justify-between gap-3"><div><a class="text-sm font-semibold text-indigo-700 hover:underline" href="{% url 'budget:dashboard' %}?entity={{ entity.pk }}">← Kembali ke anggaran</a><h1 class="page-title mt-3">Pagu anggaran aktif</h1><p class="text-sm text-slate-500">{{ entity.name }}</p></div>{% if can_create_revision %}<a class="btn-primary" href="{% url 'budget:revision_create' %}?entity={{ entity.pk }}">Ajukan revisi pagu</a>{% endif %}</div>
+<section class="surface">
+  {% if allocations %}<div class="overflow-x-auto"><table class="data-table min-w-[900px]"><thead><tr><th>Tahun</th><th>Unit</th><th>Akun</th><th>Sumber dana</th><th class="text-right">Pagu</th><th class="text-right">Komitmen</th><th class="text-right">Sisa</th></tr></thead><tbody>
+  {% for item in allocations %}<tr><td>{{ item.fiscal_year.code }}</td><td>{{ item.unit_id }}</td><td class="font-mono text-xs">{{ item.account_id }}</td><td>{{ item.funding_source }}</td><td class="text-right tabular-nums">Rp {{ item.allocated_amount }}</td><td class="text-right tabular-nums">Rp {{ item.committed_amount }}</td><td class="text-right font-semibold tabular-nums">Rp {{ item.available_amount }}</td></tr>{% endfor %}
+  </tbody></table></div>{% else %}<p class="empty-state">Belum ada pagu aktif. Pagu terbentuk ketika APBU disetujui.</p>{% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Revisi Pagu — SIMKEU{% endblock %}
+{% block content %}
+<div class="mb-6"><a class="text-sm font-semibold text-indigo-700 hover:underline" href="{% url 'budget:allocation_list' %}?entity={{ entity.pk }}">← Kembali ke pagu</a><h1 class="page-title mt-3">Ajukan revisi pagu</h1><p class="text-sm text-slate-500">{{ entity.name }} · pilih satu atau beberapa pos yang akan diubah</p></div>
+<form method="post" class="space-y-6">
+  {% csrf_token %}
+  <section class="surface grid gap-4 md:grid-cols-2">
+    <div><label class="field-label" for="{{ form.fiscal_year_id.id_for_label }}">Tahun buku</label><select class="field" name="fiscal_year_id" required><option value="">Pilih tahun buku</option>{% for year in fiscal_years %}<option value="{{ year.pk }}">{{ year.code }} — {{ year.name }}</option>{% endfor %}</select></div>
+    <div><label class="field-label" for="{{ form.effective_date.id_for_label }}">Tanggal efektif</label>{{ form.effective_date }}</div>
+    <div class="md:col-span-2"><label class="field-label" for="{{ form.reason.id_for_label }}">Alasan revisi</label>{{ form.reason }}</div>
+  </section>
+  <section class="surface">
+    <h2 class="section-title mb-3">Nominal pagu yang diusulkan</h2>
+    <p class="mb-4 text-sm text-slate-500">Centang hanya pos yang berubah. Penurunan pagu di bawah komitmen aktif akan ditolak saat persetujuan.</p>
+    {% if allocations %}<div class="overflow-x-auto"><table class="data-table min-w-[800px]"><thead><tr><th>Pilih</th><th>Tahun</th><th>Unit / COA</th><th>Sumber dana</th><th class="text-right">Pagu saat ini</th><th class="text-right">Pagu baru (Rp)</th></tr></thead><tbody>
+      {% for item in allocations %}<tr><td><input class="h-4 w-4 rounded border-slate-300 text-indigo-600" type="checkbox" name="allocation_ids" value="{{ item.pk }}"></td><td>{{ item.fiscal_year.code }}</td><td>{{ item.unit_id }}<span class="block font-mono text-xs text-slate-500">{{ item.account_id }}</span></td><td>{{ item.funding_source }}</td><td class="text-right tabular-nums">Rp {{ item.allocated_amount }}</td><td><input class="field w-44 text-right tabular-nums" type="number" min="0" step="1" name="new_amount_{{ item.pk }}" value="{{ item.allocated_amount }}"></td></tr>{% endfor %}
+    </tbody></table></div>{% else %}<p class="empty-state">Tidak ada pagu aktif dalam scope Anda.</p>{% endif %}
+    <div class="mt-5"><button class="btn-primary" type="submit" {% if not allocations %}disabled{% endif %}>Simpan draf revisi</button></div>
+  </section>
+</form>
+{% endblock %}

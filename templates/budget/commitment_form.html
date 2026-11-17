@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Buat Komitmen — SIMKEU{% endblock %}
+{% block content %}
+<div class="mb-6"><a class="text-sm font-semibold text-indigo-700 hover:underline" href="{% url 'budget:commitment_list' %}?entity={{ entity.pk }}">← Kembali ke komitmen</a><h1 class="page-title mt-3">Cadangkan komitmen anggaran</h1><p class="text-sm text-slate-500">{{ entity.name }}</p></div>
+<form method="post" class="surface max-w-2xl space-y-4">
+  {% csrf_token %}
+  <div><label class="field-label" for="id_allocation_id">Pos pagu</label><select class="field" name="allocation_id" id="id_allocation_id" required><option value="">Pilih pos pagu</option>{% for item in allocations %}<option value="{{ item.pk }}">{{ item.fiscal_year.code }} · Unit {{ item.unit_id }} · {{ item.account_id }} · {{ item.funding_source }} · Rp {{ item.allocated_amount }}</option>{% endfor %}</select></div>
+  {% for field in form %}{% if field.name != "allocation_id" %}<div><label class="field-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% if field.errors %}<p class="field-error">{{ field.errors|join:", " }}</p>{% endif %}</div>{% endif %}{% endfor %}
+  <p class="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">Sistem mengunci baris pagu selama reservasi dan menolak komitmen yang melebihi sisa pagu. Kunci sumber dokumen harus unik untuk mencegah pencatatan ganda.</p>
+  <button class="btn-primary" type="submit">Cadangkan komitmen</button>
+</form>
+{% endblock %}

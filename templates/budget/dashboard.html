@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Budget Management — SIMKEU{% endblock %}
+{% block content %}
+<div class="mb-8 flex flex-wrap items-start justify-between gap-4">
+  <div>
+    <p class="text-sm font-semibold uppercase tracking-wide text-indigo-600">P1 · Budget Management</p>
+    <h1 class="mt-1 text-3xl font-bold text-slate-900">Anggaran</h1>
+    {% if entity %}<p class="mt-2 text-slate-600">{{ entity.name }} · pengelolaan RKAT, RAPBU, APBU, pagu dan komitmen</p>{% endif %}
+  </div>
+  {% if entity %}
+  <div class="flex flex-wrap gap-2">
+    {% if can_create %}<a class="btn-primary" href="{% url 'budget:plan_create' %}?entity={{ entity.pk }}">Buat dokumen</a>{% endif %}
+    {% if can_manage_fiscal_year %}<a class="btn-secondary" href="{% url 'budget:fiscal_year_create' %}?entity={{ entity.pk }}">Tambah tahun buku</a>{% endif %}
+  </div>
+  {% endif %}
+</div>
+
+{% if entity %}
+  {% if fiscal_years %}
+  <form method="get" class="surface mb-6 flex flex-wrap items-end gap-3">
+    {% if entities|length > 1 %}
+      <div><label for="entity" class="field-label">Badan hukum</label><select class="field min-w-64" id="entity" name="entity">{% for item in entities %}<option value="{{ item.pk }}" {% if item.pk == entity.pk %}selected{% endif %}>{{ item.code }} — {{ item.name }}</option>{% endfor %}</select></div>
+    {% else %}<input type="hidden" name="entity" value="{{ entity.pk }}">{% endif %}
+    <div><label for="fiscal_year_id" class="field-label">Tahun buku</label><select class="field min-w-64" id="fiscal_year_id" name="fiscal_year_id">{% for year in fiscal_years %}<option value="{{ year.pk }}" {% if selected_fiscal_year.pk == year.pk %}selected{% endif %}>{{ year.code }} — {{ year.name }}</option>{% endfor %}</select></div>
+    <button class="btn-secondary" type="submit">Tampilkan</button>
+  </form>
+  {% endif %}
+
+  {% if selected_fiscal_year %}<p class="mb-4 text-sm text-slate-500">Ringkasan tahun buku: <strong>{{ selected_fiscal_year.code }}</strong> · {{ selected_fiscal_year.starts_on|date:"d M Y" }}–{{ selected_fiscal_year.ends_on|date:"d M Y" }}</p>{% endif %}
+  <div class="grid gap-4 sm:grid-cols-3">
+    <section class="metric-card"><p class="metric-label">Total pagu aktif</p><p class="metric-value">Rp {{ pagu_total }}</p></section>
+    <section class="metric-card"><p class="metric-label">Komitmen + realisasi</p><p class="metric-value">Rp {{ committed_total }}</p></section>
+    <section class="metric-card"><p class="metric-label">Sisa pagu</p><p class="metric-value">Rp {{ available_total }}</p></section>
+  </div>
+
+  <div class="mt-8 flex flex-wrap gap-2">
+    <a class="btn-secondary" href="{% url 'budget:allocation_list' %}?entity={{ entity.pk }}">Lihat pagu</a>
+    <a class="btn-secondary" href="{% url 'budget:revision_create' %}?entity={{ entity.pk }}">Ajukan revisi</a>
+    <a class="btn-secondary" href="{% url 'budget:commitment_list' %}?entity={{ entity.pk }}">Komitmen</a>
+  </div>
+
+  {% if can_consolidate and fiscal_years %}
+  <section class="surface mt-8">
+    <div class="mb-4">
+      <h2 class="section-title">Konsolidasi RKAT menjadi RAPBU</h2>
+      <p class="text-sm text-slate-500">Mengambil versi RKAT unit terbaru yang sudah disetujui untuk tahun buku terpilih.</p>
+    </div>
+    <form method="post" action="{% url 'budget:rapbu_consolidate' %}" class="grid gap-3 md:grid-cols-[1fr_1fr_auto]">
+      {% csrf_token %}
+      <input type="hidden" name="entity" value="{{ entity.pk }}">
+      <select class="field" name="fiscal_year_id" required>
+        <option value="">Pilih tahun buku</option>
+        {% for year in fiscal_years %}<option value="{{ year.pk }}">{{ year.code }} · {{ year.name }}</option>{% endfor %}
+      </select>
+      <input class="field" name="title" maxlength="160" placeholder="Judul RAPBU (opsional)">
+      <button class="btn-primary" type="submit">Konsolidasikan</button>
+    </form>
+  </section>
+  {% endif %}
+
+  <section class="surface mt-8">
+    <div class="mb-4 flex items-center justify-between">
+      <h2 class="section-title">Dokumen anggaran</h2>
+      <span class="text-sm text-slate-500">30 dokumen terbaru</span>
+    </div>
+    {% if plans %}
+    <div class="overflow-x-auto">
+      <table class="data-table">
+        <thead><tr><th>Dokumen</th><th>Tahun buku</th><th>Versi</th><th>Status</th><th>Dibuat</th><th></th></tr></thead>
+        <tbody>
+        {% for plan in plans %}
+          <tr>
+            <td><span class="font-semibold text-slate-900">{{ plan.plan_type }}</span><span class="block text-xs text-slate-500">{{ plan.title }}</span></td>
+            <td>{{ plan.fiscal_year.code }}</td><td>v{{ plan.version }}</td>
+            <td><span class="status-pill">{{ plan.get_status_display }}</span></td>
+            <td>{{ plan.created_at|date:"d M Y" }}</td>
+            <td><a class="text-sm font-semibold text-indigo-700 hover:underline" href="{% url 'budget:plan_detail' plan_id=plan.pk %}">Buka</a></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}<p class="empty-state">Belum ada dokumen anggaran pada scope yang dapat diakses.</p>{% endif %}
+  </section>
+{% else %}
+  <div class="surface empty-state">Tidak ada badan hukum yang dapat diakses melalui penugasan RBAC Anda.</div>
+{% endif %}
+{% endblock %}

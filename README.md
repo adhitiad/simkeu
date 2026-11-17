@@ -33,11 +33,22 @@ Dashboard dan master data platform sudah memiliki IAM/RBAC berbasis badan hukum,
 
 - Billing/tagihan mahasiswa, tarif berversi, beasiswa, dispensasi, cicilan, dan denda.
 - Penerimaan pembayaran VA/QRIS, webhook provider, inbox idempotent, alokasi multi-tagihan, refund, dan rekonsiliasi bank.
-- Anggaran/RAPB, pengajuan dana, komitmen, SPJ, dan approval berjenjang.
+- Pengajuan dana, pengadaan, SPJ, dan approval workflow dinamis.
 - Pajak, payroll, laporan neraca/penghasilan komprehensif/arus kas, dan ekspor Coretax.
 - Integrasi produksi SIAKAD Sister dan SIMPEG.
 
 Bagian tersebut membutuhkan kontrak provider, kebijakan akuntansi yayasan, struktur COA yang disetujui, dan aturan otorisasi bisnis; tidak boleh diisi dengan asumsi teknis semata.
+
+### P1 Budget Management
+
+Implementasi P1 menyediakan tahun buku, RKAT unit, konsolidasi RAPBU, APBU, pagu aktif, revisi pagu, dan reservasi komitmen. APBU yang disetujui membuka pagu. Komitmen dan revisi dijalankan lewat service domain dengan RBAC scope dan maker-checker. Detail status, permission, formula sisa pagu, serta batasan implementasi tersedia di docs/modules/budget-management.md.
+
+Build Tailwind/PostCSS sebelum menjalankan UI atau collectstatic:
+
+    npm install
+    npm run css:build
+
+Gunakan npm run css:watch saat pengembangan UI. Hasil build ditulis ke static/css/app.css.
 
 ## Virtual environment
 

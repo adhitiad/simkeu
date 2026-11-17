@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Komitmen Anggaran — SIMKEU{% endblock %}
+{% block content %}
+<div class="mb-6 flex flex-wrap items-center justify-between gap-3"><div><a class="text-sm font-semibold text-indigo-700 hover:underline" href="{% url 'budget:dashboard' %}?entity={{ entity.pk }}">← Kembali ke anggaran</a><h1 class="page-title mt-3">Komitmen anggaran</h1><p class="text-sm text-slate-500">{{ entity.name }}</p></div>{% if can_create %}<a class="btn-primary" href="{% url 'budget:commitment_create' %}?entity={{ entity.pk }}">Buat komitmen</a>{% endif %}</div>
+<section class="surface">
+  {% if commitments %}<div class="overflow-x-auto"><table class="data-table min-w-[900px]"><thead><tr><th>Sumber</th><th>Uraian</th><th>Unit</th><th class="text-right">Nominal</th><th>Status</th><th>Aksi</th></tr></thead><tbody>
+  {% for item in commitments %}<tr><td>{{ item.source_type }}<span class="block text-xs text-slate-500">{{ item.source_id }}</span></td><td>{{ item.description }}</td><td>{{ item.allocation.unit_id }}</td><td class="text-right tabular-nums">Rp {{ item.amount }}</td><td><span class="status-pill">{{ item.get_status_display }}</span></td><td>
+    {% if item.status == "reserved" %}
+      <div class="flex flex-wrap gap-2">
+        <form method="post" action="{% url 'budget:commitment_action' commitment_id=item.pk %}">{% csrf_token %}<input type="hidden" name="action" value="fulfill"><button class="text-xs font-semibold text-indigo-700 hover:underline" type="submit">Tandai realisasi</button></form>
+        <form method="post" action="{% url 'budget:commitment_action' commitment_id=item.pk %}" class="flex gap-1">{% csrf_token %}<input type="hidden" name="action" value="release"><input class="field w-36 text-xs" name="reason" minlength="8" maxlength="500" placeholder="Alasan pelepasan" required><button class="text-xs font-semibold text-rose-700 hover:underline" type="submit">Lepaskan</button></form>
+      </div>
+    {% else %}—{% endif %}
+  </td></tr>{% endfor %}
+  </tbody></table></div>{% else %}<p class="empty-state">Belum ada komitmen anggaran.</p>{% endif %}
+</section>
+{% endblock %}

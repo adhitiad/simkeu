@@ -150,8 +150,10 @@ def has_permission(
     """
     if not user.is_authenticated or not user.is_active:
         return False
+    if not Entity.objects.filter(pk=entity_id, is_active=True).exists():
+        return False
     if user.is_superuser:
-        return Entity.objects.filter(pk=entity_id, is_active=True).exists()
+        return True
 
     if (
         institution_id is not None
@@ -275,6 +277,10 @@ def visible_unit_ids(
     institution_id: int | None = None,
 ) -> set[int] | None:
     """Return visible unit IDs; None represents entity-wide visibility."""
+    if not user.is_authenticated or not user.is_active:
+        return set()
+    if not Entity.objects.filter(pk=entity_id, is_active=True).exists():
+        return set()
     if user.is_superuser:
         return None
     scopes = active_role_scopes(user, entity_id, permission_code)
@@ -541,9 +547,47 @@ DEFAULT_ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
         "iam.role.read",
         "iam.role.assign",
         "iam.audit.read",
+        "budget.read",
+        "budget.plan.read",
+        "budget.plan.create",
+        "budget.line.create",
+        "budget.plan.submit",
+        "budget.plan.approve",
+        "budget.fiscal_year.manage",
+        "budget.pagu.read",
+        "budget.revision.read",
+        "budget.revision.create",
+        "budget.revision.submit",
+        "budget.revision.approve",
+        "budget.commitment.read",
+        "budget.commitment.create",
+        "budget.commitment.release",
+        "budget.commitment.fulfill",
     ),
-    Role.VICE_RECTOR: ("dashboard.read", "iam.entity.read", "iam.unit.read"),
-    Role.HEAD_BUREAU: ("dashboard.read", "iam.unit.read", "iam.audit.read"),
+    Role.VICE_RECTOR: (
+        "dashboard.read",
+        "iam.entity.read",
+        "iam.unit.read",
+        "budget.read",
+        "budget.plan.read",
+        "budget.plan.review",
+        "budget.pagu.read",
+        "budget.revision.read",
+        "budget.revision.verify",
+        "budget.commitment.read",
+    ),
+    Role.HEAD_BUREAU: (
+        "dashboard.read",
+        "iam.unit.read",
+        "iam.audit.read",
+        "budget.read",
+        "budget.plan.read",
+        "budget.plan.review",
+        "budget.pagu.read",
+        "budget.revision.read",
+        "budget.revision.verify",
+        "budget.commitment.read",
+    ),
     Role.FINANCE_MANAGER: (
         "dashboard.read",
         "iam.unit.read",
@@ -552,10 +596,47 @@ DEFAULT_ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
         "ledger.journal.read",
         "ledger.journal.create",
         "ledger.period.close",
+        "budget.read",
+        "budget.plan.read",
+        "budget.plan.create",
+        "budget.line.create",
+        "budget.plan.submit",
+        "budget.plan.review",
+        "budget.fiscal_year.manage",
+        "budget.pagu.read",
+        "budget.revision.read",
+        "budget.revision.create",
+        "budget.revision.submit",
+        "budget.revision.verify",
+        "budget.commitment.read",
+        "budget.commitment.create",
     ),
-    Role.TREASURER: ("dashboard.read", "ledger.journal.read"),
-    Role.VERIFICATION_OFFICER: ("dashboard.read",),
-    Role.REVENUE_OFFICER: ("dashboard.read",),
+    Role.TREASURER: (
+        "dashboard.read",
+        "ledger.journal.read",
+        "budget.read",
+        "budget.pagu.read",
+        "budget.commitment.read",
+        "budget.commitment.create",
+        "budget.commitment.release",
+        "budget.commitment.fulfill",
+    ),
+    Role.VERIFICATION_OFFICER: (
+        "dashboard.read",
+        "budget.read",
+        "budget.plan.read",
+        "budget.plan.review",
+        "budget.pagu.read",
+        "budget.revision.read",
+        "budget.revision.verify",
+        "budget.commitment.read",
+    ),
+    Role.REVENUE_OFFICER: (
+        "dashboard.read",
+        "budget.read",
+        "budget.plan.read",
+        "budget.pagu.read",
+    ),
 }
 
 
